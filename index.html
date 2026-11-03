@@ -36,23 +36,45 @@ button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
 .wrap { max-width: 560px; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 0; }
-header { padding-bottom: 8px; }
-header h1 { font-weight: 800; font-size: clamp(2.3rem, 10vw, 3.1rem); line-height: .95; letter-spacing: -.04em; margin: 0; text-wrap: balance; }
-header p { margin: 12px 0 0; color: var(--sub); font-size: 1rem; font-weight: 500; max-width: 38ch; }
-header p.note { font-weight: 700; color: var(--fg); }
+header.top { padding-bottom: 4px; }
+header.top h1 { font-weight: 800; font-size: clamp(2.8rem, 15vw, 3.8rem); line-height: .9; letter-spacing: -.05em; margin: 0; text-transform: uppercase; }
 #app { display: flex; flex-direction: column; }
 .nojs { border-top: 1px solid var(--hair); padding: 18px 0; font-size: 1.05rem; }
 .nojs p { margin: 8px 0 0; max-width: 40ch; }
 .cap { font-size: .85rem; font-weight: 500; color: var(--sub); }
 
-/* hero circles (setup) */
-.hero { position: relative; width: min(100%, 330px); aspect-ratio: 1; margin: 18px auto 22px; }
-.hero-big { position: absolute; inset: 0; border-radius: 50%; background: var(--black); color: var(--orange); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.hero-big b { font-size: clamp(5rem, 28vw, 7.5rem); font-weight: 800; line-height: .85; letter-spacing: -.06em; }
-.hero-big span { font-weight: 500; font-size: 1rem; margin-top: 6px; }
-.hero-small { position: absolute; width: 31%; aspect-ratio: 1; left: 11%; bottom: 7%; border-radius: 50%; background: var(--orange); color: var(--black); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
-.hero-small b { font-size: 1.9rem; font-weight: 800; letter-spacing: -.04em; }
-.hero-small span { font-size: .8rem; font-weight: 600; margin-top: 2px; }
+/* wheel: one progress circle for every screen. Big in the page, small in the fixed dock once it scrolls away. */
+:root { --arc: var(--black); }
+body.plan { --arc: var(--red); }
+.wheel { position: relative; aspect-ratio: 1; }
+.wheel.lg { width: min(100%, 300px); margin: 14px auto 18px; }
+.wheel.sm { width: 56px; flex: none; }
+.wheel svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wheel .w-track { fill: none; stroke: var(--fg); stroke-opacity: .2; stroke-width: 10; }
+.wheel .w-fill { fill: none; stroke: var(--arc); stroke-width: 10; transition: stroke-dasharray .35s ease; }
+.w-disc { position: absolute; inset: 8%; border-radius: 50%; background: var(--black); color: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+body.setup .w-disc { color: var(--orange); }
+.w-num { font-weight: 800; letter-spacing: -.06em; line-height: .85; font-variant-numeric: tabular-nums; }
+.w-cap { font-weight: 500; }
+.wheel.lg .w-num { font-size: clamp(4.6rem, 26vw, 6.4rem); }
+.wheel.lg .w-cap { font-size: 1rem; margin-top: 8px; }
+.wheel.sm .w-num { font-size: 1.15rem; letter-spacing: -.04em; line-height: 1; }
+.wheel.sm .w-cap { display: none; }
+.w-sat { position: absolute; width: 30%; aspect-ratio: 1; left: 9%; bottom: 5%; border-radius: 50%; background: var(--bg); color: var(--black); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.w-sat b { font-size: 1.8rem; font-weight: 800; letter-spacing: -.04em; }
+.w-sat span { font-size: .78rem; font-weight: 600; margin-top: 2px; }
+
+/* dock: compact wheel fixed at the top while the page scrolls underneath */
+.dock { position: fixed; top: 0; left: 0; right: 0; z-index: 8; background: var(--bg); border-bottom: 1px solid var(--hair); padding: calc(8px + env(safe-area-inset-top)) 20px 8px; transform: translateY(-110%); transition: transform .25s ease; }
+.dock.on { transform: translateY(0); }
+.dock-in { max-width: 560px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+.dock .brand { font-weight: 800; font-size: 1.5rem; letter-spacing: -.05em; line-height: 1; text-transform: uppercase; }
+.dock .meta { font-size: .9rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-left: auto; text-align: right; }
+.dock .meta span { display: block; font-weight: 500; color: var(--sub); font-size: .78rem; }
+.dock-toggle { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; display: grid; place-items: center; padding: 0; flex: none; }
+.pull { position: fixed; top: 0; left: 50%; transform: translate(-50%, -100%); z-index: 8; width: 84px; height: 30px; border: 0; border-radius: 0 0 16px 16px; background: var(--fg); color: var(--bg); display: grid; place-items: center; padding: 0; margin-top: env(safe-area-inset-top); transition: transform .25s ease; }
+.pull.on { transform: translate(-50%, 0); }
+html { scroll-padding-top: 90px; }
 
 /* setup */
 .panel { border-top: 1px solid var(--hair); padding: 16px 0 22px; display: flex; flex-direction: column; gap: 12px; }
@@ -80,15 +102,8 @@ header p.note { font-weight: 700; color: var(--fg); }
 
 /* workout */
 .row-links { display: flex; gap: 18px; padding: 6px 0 0; }
-.stat { border-top: 1px solid var(--hair); margin-top: 14px; padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
-.ring { width: min(100%, 250px); aspect-ratio: 1; align-self: center; display: block; }
-.ring circle { fill: none; stroke-width: 62; }
-.ring .track { stroke: var(--dred); }
-.ring .fill { stroke: var(--red); stroke-linecap: butt; transition: stroke-dasharray .35s ease; }
-.stat-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-bottom: 1px solid var(--hair); padding-bottom: 8px; }
-.stat-row .num { display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
-.stat-row .num b { font-size: 4.2rem; font-weight: 800; line-height: .85; letter-spacing: -.06em; }
-.stat-row .num i { font-style: normal; font-size: 1.2rem; font-weight: 500; color: var(--sub); }
+.plan-info { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--hair); padding-top: 14px; margin-bottom: 14px; }
+.plan-title { margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -.04em; line-height: 1.05; text-wrap: balance; }
 .blocks { display: flex; flex-direction: column; }
 .block { border-top: 1px solid var(--hair); padding: 14px 0 6px; }
 .block-h { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding-bottom: 6px; }
@@ -119,7 +134,6 @@ header p.note { font-weight: 700; color: var(--fg); }
 .info[hidden] { display: none; }
 .info dt { font-weight: 800; display: inline; }
 .info dd { display: inline; margin: 0; }
-.rest-note { padding: 8px 0 10px; border-top: 1px solid var(--hair); }
 
 .timer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--black); color: var(--beige); padding: 10px 20px calc(10px + env(safe-area-inset-bottom)); z-index: 5; }
 .timer[hidden] { display: none; }
@@ -131,18 +145,31 @@ header p.note { font-weight: 700; color: var(--fg); }
 .timer .stop { margin-left: auto; background: var(--red); border-color: var(--red); color: #fff; font-size: .8rem; }
 body.setup footer { display: none; }
 footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22px; border-top: 1px solid var(--hair); margin-top: 18px; }
-@media (prefers-reduced-motion: reduce) { .ring .fill { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .wheel .w-fill, .dock, .pull { transition: none; } }
 </style>
 </head>
 <body class="setup">
 <div class="wrap">
-  <header>
-    <h1 id="h1">Palli</h1>
-    <p id="sub"></p>
+  <header class="top">
+    <h1 id="h1">PALLI</h1>
   </header>
   <div id="app"><div class="nojs"><b>Questa anteprima non esegue gli script.</b><p>La scheda funziona solo aprendo il file in un browser: salva il file, poi aprilo con Safari o Chrome. Se è online, apri il link nel browser invece che nell'anteprima di un'app di messaggi o di file.</p></div></div>
   <footer>Le spunte e i carichi restano salvati solo su questo browser, per chi apre la pagina.</footer>
 </div>
+
+<div class="dock" id="dock" aria-hidden="true">
+  <div class="dock-in">
+    <div id="dockwheel"></div>
+    <span class="brand">Palli</span>
+    <div class="meta" id="dockmeta"></div>
+    <button type="button" class="dock-toggle" id="dockhide" aria-label="Nascondi il cerchio" tabindex="-1">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 9 5.5l6 6"/></svg>
+    </button>
+  </div>
+</div>
+<button type="button" class="pull" id="pull" aria-label="Mostra il cerchio" tabindex="-1">
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5 9 12.5l6-6"/></svg>
+</button>
 
 <div class="timer" id="timerbar" role="region" aria-label="Timer di recupero" hidden>
   <div class="timer-in">
@@ -576,15 +603,16 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     var metaParts = [minutes + ' min circa'];
     if (prof) metaParts.push(prof.n);
     metaParts.push(STYLES[style], EQUIP[f.eq], LEVELS[f.level]);
-    return { plan: { title: gs.map(gname).join(' · '), meta: metaParts.join(' · '), note: notes.join(' '), blocks: blocks } };
+    return { plan: { minutes: minutes, title: gs.map(gname).join(' · '), meta: metaParts.join(' · '), note: notes.join(' '), blocks: blocks } };
   }
 
   // ---------- Stato ----------
   var KEY = 'scheda-superserie-v2';
-  var state = { view: 'setup', form: { groups: [], time: 60, style: 'ss', eq: 'g', level: 'i', profile: '', emph: 'bal' }, plan: null, opt: {}, done: {}, kg: {}, extra: {}, info: {} };
+  var state = { view: 'setup', form: { groups: [], time: 60, style: 'ss', eq: 'g', level: 'i', profile: '', emph: 'bal', touched: {} }, plan: null, opt: {}, done: {}, kg: {}, extra: {}, info: {} };
   try { var raw = localStorage.getItem(KEY); if (raw) { var pp = JSON.parse(raw); for (var kk in pp) state[kk] = pp[kk]; } } catch (e) {}
   if (state.view === 'plan' && !state.plan) state.view = 'setup';
   if (!state.form.emph) state.form.emph = 'bal';
+  if (!state.form.touched) state.form.touched = {};
   if (typeof state.form.profile !== 'string') state.form.profile = '';
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
@@ -600,7 +628,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   }
   function presetPlan(i) {
     var s = SESSIONS[i];
-    return { title: s.sub.replace(/, /g, ' · '), meta: 'circa 60 min · Superserie · Palestra completa', note: '', blocks: s.blocks, preset: true };
+    return { minutes: 60, title: s.sub.replace(/, /g, ' · '), meta: 'circa 60 min · Superserie · Palestra completa', note: '', blocks: s.blocks, preset: true };
   }
 
   // ---------- Schermata di scelta ----------
@@ -612,15 +640,19 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     Object.keys(obj).forEach(function (k) { h += chip(obj[k], cur === k, attr, k, '', locked); });
     return h + '</div>';
   }
+  function setupSteps() {
+    var f = state.form, prof = PROFILES[f.profile] || null, t = f.touched || {};
+    var lvLock = prof && prof.sets && prof.big;
+    var done = [!!(f.groups.length || prof), !!t.time, !!(t.style || (prof && prof.style)), !!t.eq, !!(t.level || lvLock)];
+    return done.filter(Boolean).length;
+  }
   function renderSetup(err) {
     document.body.className = 'setup'; setThemeColor('#e45a38');
-    var h1 = document.getElementById('h1'); h1.textContent = 'Che allenamento fai?'; h1.style.fontSize = '';
-    document.getElementById('sub').textContent = 'Scegli gruppi, tempo e attrezzatura. La scheda si crea da sola.';
     document.getElementById('timerbar').hidden = true;
     var f = state.form, h = '';
     var prof = PROFILES[f.profile] || null;
     var cnt = f.groups.length || (prof ? prof.groups.length : 0);
-    h += '<div class="hero" aria-hidden="true"><div class="hero-big"><b>' + cnt + '</b><span>' + (cnt === 1 ? 'gruppo' : 'gruppi') + '</span></div><div class="hero-small"><b>' + f.time + '</b><span>min</span></div></div>';
+    h += wheelHtml('lg', cnt, cnt === 1 ? 'gruppo' : 'gruppi', f.time, 'min');
     h += '<section class="panel"><h2>Obiettivo <span class="cap">facoltativo</span></h2><p class="hint">' + (prof ? esc(prof.d) : 'Scegli un profilo e la scheda si adatta: ripetizioni, recuperi, cardio. Se lo salti, la scheda è quella standard.') + '</p><div class="chips">';
     Object.keys(PROFILES).forEach(function (k) { h += chip(PROFILES[k].n, f.profile === k, 'data-prof', k); });
     h += '</div></section>';
@@ -644,6 +676,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     SESSIONS.forEach(function (s, i) { h += '<button type="button" class="preset" data-preset="' + i + '"><span><b>' + esc(s.sub) + '</b><span class="cap" style="display:block">Superserie, gambe a parte, circa 60 min</span></span><span class="go" aria-hidden="true">&rarr;</span></button>'; });
     h += '</div></section>';
     document.getElementById('app').innerHTML = h;
+    updateWheel();
   }
 
   // ---------- Scheda ----------
@@ -674,30 +707,89 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     });
     return h;
   }
-  function renderPlan() {
-    var p = state.plan;
-    document.body.className = 'plan has-timer'; setThemeColor('#d9d5c8');
-    var h1 = document.getElementById('h1'); h1.textContent = p.title; h1.style.fontSize = p.title.length > 28 ? '2rem' : '';
-    document.getElementById('sub').textContent = p.meta;
-    document.getElementById('timerbar').hidden = false;
-    var h = '<div class="row-links"><button type="button" class="textbtn" id="change">Cambia scheda</button><button type="button" class="textbtn" id="reset">Azzera spunte</button></div>';
-    if (p.note) h += '<p class="cap" style="font-weight:700;color:var(--fg);margin:6px 0 0">' + esc(p.note) + '</p>';
-    h += '<section class="stat" aria-live="polite"><svg class="ring" viewBox="0 0 200 200" role="img" aria-label="Avanzamento della seduta"><circle class="track" cx="100" cy="100" r="69"/><circle class="fill" id="ring" cx="100" cy="100" r="69" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 100 100)"/></svg><div class="stat-row"><span class="cap">Serie fatte</span><span class="num"><b id="cnum">0</b><i id="ctot">/ 0</i></span></div></section>';
-    h += '<div class="blocks" id="blocks">' + blocksHtml() + '</div>';
-    document.getElementById('app').innerHTML = h;
-    updateProgress();
-  }
-  function rerenderBlocks() { document.getElementById('blocks').innerHTML = blocksHtml(); updateProgress(); }
-  function updateProgress() {
+  function planTotals() {
     var total = 0, done = 0;
     state.plan.blocks.forEach(function (b) {
       b.items.forEach(function (ex) { var n = setsFor(ex), d = doneArr(ex); total += n; for (var i = 0; i < n; i++) if (d[i]) done++; });
     });
-    var pct = total ? Math.round(done / total * 100) : 0;
-    document.getElementById('cnum').textContent = done;
-    document.getElementById('ctot').textContent = '/ ' + total;
-    document.getElementById('ring').setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
+    return { total: total, done: done };
   }
+  function planMinutes(p) { if (p.minutes) return p.minutes; var m = /(\d+)/.exec(p.meta || ''); return m ? parseInt(m[1], 10) : 60; }
+  function renderPlan() {
+    var p = state.plan, t = planTotals();
+    document.body.className = 'plan has-timer'; setThemeColor('#d9d5c8');
+    document.getElementById('timerbar').hidden = false;
+    var h = wheelHtml('lg', t.done, '/ ' + t.total + ' serie', planMinutes(p), 'min');
+    h += '<section class="plan-info"><h2 class="plan-title">' + esc(p.title) + '</h2><span class="cap">' + esc(p.meta) + '</span>';
+    if (p.note) h += '<span class="cap" style="font-weight:700;color:var(--fg)">' + esc(p.note) + '</span>';
+    h += '<div class="row-links"><button type="button" class="textbtn" id="change">Cambia scheda</button><button type="button" class="textbtn" id="reset">Azzera spunte</button></div></section>';
+    h += '<div class="blocks" id="blocks">' + blocksHtml() + '</div>';
+    document.getElementById('app').innerHTML = h;
+    updateWheel();
+  }
+  function rerenderBlocks() { document.getElementById('blocks').innerHTML = blocksHtml(); updateProgress(); }
+  function updateProgress() { updateWheel(); }
+
+  // ---------- Wheel + dock ----------
+  function wheelHtml(size, num, cap, sat, satCap) {
+    var h = '<div class="wheel ' + size + '"' + (size === 'lg' ? ' id="hero"' : '') + ' role="img" aria-label="Avanzamento"><svg viewBox="0 0 200 200" aria-hidden="true"><circle class="w-track" cx="100" cy="100" r="95"/><circle class="w-fill" cx="100" cy="100" r="95" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 100 100)"/></svg><div class="w-disc"><b class="w-num">' + esc(num) + '</b><span class="w-cap">' + esc(cap) + '</span></div>';
+    if (size === 'lg' && sat !== undefined) h += '<div class="w-sat"><b>' + esc(sat) + '</b><span>' + esc(satCap) + '</span></div>';
+    return h + '</div>';
+  }
+  function updateWheel() {
+    var pct, num, meta, sub;
+    if (state.view === 'plan' && state.plan) {
+      var t = planTotals(); pct = t.total ? Math.round(t.done / t.total * 100) : 0;
+      num = t.done; meta = t.done + ' / ' + t.total; sub = 'serie fatte';
+      var big = document.querySelector('#app .wheel.lg .w-num'); if (big) big.textContent = t.done;
+      var cap = document.querySelector('#app .wheel.lg .w-cap'); if (cap) cap.textContent = '/ ' + t.total + ' serie';
+    } else {
+      var n = setupSteps(); pct = Math.round(n / 5 * 100);
+      var prof = PROFILES[state.form.profile] || null;
+      num = state.form.groups.length || (prof ? prof.groups.length : 0); meta = n + ' / 5'; sub = 'scelte fatte';
+    }
+    var dash = pct + ' ' + (100 - pct);
+    var fills = document.querySelectorAll('.wheel .w-fill'); for (var i = 0; i < fills.length; i++) fills[i].setAttribute('stroke-dasharray', dash);
+    document.getElementById('dockwheel').innerHTML = wheelHtml('sm', num, '');
+    var df = document.querySelector('#dockwheel .w-fill'); if (df) df.setAttribute('stroke-dasharray', dash);
+    document.getElementById('dockmeta').innerHTML = esc(meta) + '<span>' + esc(sub) + '</span>';
+    observeHero();
+  }
+  var dockHidden = false, heroOut = false, io = null, observed = null;
+  function applyDock() {
+    var dock = document.getElementById('dock'), pull = document.getElementById('pull');
+    var on = heroOut && !dockHidden;
+    dock.classList.toggle('on', on); dock.setAttribute('aria-hidden', on ? 'false' : 'true');
+    document.getElementById('dockhide').tabIndex = on ? 0 : -1;
+    var pon = heroOut && dockHidden;
+    pull.classList.toggle('on', pon); pull.tabIndex = pon ? 0 : -1;
+  }
+  function observeHero() {
+    var el = document.getElementById('hero');
+    if (!el || el === observed) return;
+    if (io) io.disconnect();
+    observed = el;
+    if ('IntersectionObserver' in window) {
+      io = new IntersectionObserver(function (entries) {
+        var e = entries[entries.length - 1];
+        heroOut = e.intersectionRatio < 0.4 && e.boundingClientRect.top < 0;
+        applyDock();
+      }, { threshold: [0, 0.4, 1] });
+      io.observe(el);
+    }
+    applyDock();
+  }
+  document.getElementById('dockhide').addEventListener('click', function () { dockHidden = true; applyDock(); });
+  document.getElementById('pull').addEventListener('click', function () { dockHidden = false; applyDock(); });
+  (function swipe() {
+    var y0 = null;
+    function start(e) { y0 = e.touches[0].clientY; }
+    document.getElementById('dock').addEventListener('touchstart', start, { passive: true });
+    document.getElementById('dock').addEventListener('touchend', function (e) { if (y0 !== null && e.changedTouches[0].clientY - y0 < -24) { dockHidden = true; applyDock(); } y0 = null; }, { passive: true });
+    document.getElementById('pull').addEventListener('touchstart', start, { passive: true });
+    document.getElementById('pull').addEventListener('touchend', function (e) { if (y0 !== null && e.changedTouches[0].clientY - y0 > 12) { dockHidden = false; applyDock(); } y0 = null; }, { passive: true });
+  })();
+
   function render() { if (state.view === 'plan' && state.plan) renderPlan(); else renderSetup(); }
 
   // ---------- Eventi ----------
@@ -709,12 +801,12 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
         if (ix >= 0) state.form.groups.splice(ix, 1); else state.form.groups.push(g);
         save(); renderSetup(); return;
       }
-      if ((el = t.closest('[data-time]'))) { state.form.time = parseInt(el.getAttribute('data-time'), 10); save(); renderSetup(); return; }
+      if ((el = t.closest('[data-time]'))) { state.form.time = parseInt(el.getAttribute('data-time'), 10); state.form.touched.time = 1; save(); renderSetup(); return; }
       if ((el = t.closest('[data-prof]'))) { var pk = el.getAttribute('data-prof'); state.form.profile = state.form.profile === pk ? '' : pk; save(); renderSetup(); return; }
       if ((el = t.closest('[data-emph]'))) { state.form.emph = el.getAttribute('data-emph'); save(); renderSetup(); return; }
-      if ((el = t.closest('[data-style]'))) { state.form.style = el.getAttribute('data-style'); save(); renderSetup(); return; }
-      if ((el = t.closest('[data-eq]'))) { state.form.eq = el.getAttribute('data-eq'); save(); renderSetup(); return; }
-      if ((el = t.closest('[data-level]'))) { state.form.level = el.getAttribute('data-level'); save(); renderSetup(); return; }
+      if ((el = t.closest('[data-style]'))) { state.form.style = el.getAttribute('data-style'); state.form.touched.style = 1; save(); renderSetup(); return; }
+      if ((el = t.closest('[data-eq]'))) { state.form.eq = el.getAttribute('data-eq'); state.form.touched.eq = 1; save(); renderSetup(); return; }
+      if ((el = t.closest('[data-level]'))) { state.form.level = el.getAttribute('data-level'); state.form.touched.level = 1; save(); renderSetup(); return; }
       if (t.closest('[data-go]')) {
         if (!state.form.groups.length && !state.form.profile) { renderSetup('Scegli almeno un gruppo muscolare o un obiettivo.'); return; }
         var res = generate(state.form);
