@@ -127,6 +127,7 @@ body.setup .w-disc { color: var(--orange); }
 .sets { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .set { width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; font-size: 1.35rem; font-weight: 800; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
 .set[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+.mini:disabled { opacity: .35; cursor: default; }
 .mini { width: 54px; height: 54px; border-radius: 50%; border: 2px dashed var(--fg); background: transparent; font-size: 1.5rem; font-weight: 500; line-height: 1; }
 .kg { display: flex; align-items: flex-end; gap: 6px; margin-left: auto; }
 .kg span { font-size: .85rem; font-weight: 500; color: var(--sub); padding-bottom: 6px; }
@@ -623,7 +624,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
 
   function setThemeColor(c) { var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', c); }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-  function setsFor(ex) { return (ex.sets || 3) + (state.extra[ex.id] || 0); }
+  function setsFor(ex) { return Math.max(1, (ex.sets || 3) + (state.extra[ex.id] || 0)); }
   function doneArr(ex) { return state.done[ex.id] || []; }
   function optIdx(ex) { var i = state.opt[ex.id]; return (typeof i === 'number' && i < ex.opts.length) ? i : 0; }
   function findEx(id) {
@@ -691,7 +692,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     h += '<div class="ex-top"><div class="tag">' + esc(ex.tag) + '</div><div><div class="ex-name">' + esc(op.n) + '</div><div class="ex-meta">' + esc(ex.muscle) + ' · ' + (ex.cardio ? '' : n + ' × ') + esc(ex.reps) + '</div></div></div>';
     h += '<div class="sets">';
     for (var s = 0; s < n; s++) h += '<button class="set" type="button" data-set="' + s + '" aria-pressed="' + (!!d[s]) + '" aria-label="Serie ' + (s + 1) + '">' + (s + 1) + '</button>';
-    if (!ex.cardio) h += '<button class="mini" type="button" data-act="add" aria-label="Aggiungi una serie">+</button>';
+    if (!ex.cardio) h += '<button class="mini" type="button" data-act="sub" aria-label="Togli una serie"' + (n <= 1 ? ' disabled' : '') + '>&minus;</button><button class="mini" type="button" data-act="add" aria-label="Aggiungi una serie">+</button>';
     if (!ex.cardio) h += '<label class="kg"><span>kg</span><input type="text" inputmode="decimal" id="kg-' + ex.id + '" data-kg="' + esc(kgKey) + '" value="' + esc(state.kg[kgKey] || '') + '" placeholder="0"></label>';
     h += '</div>';
     h += '<div class="tools"><select id="alt-' + ex.id + '" data-act="alt" aria-label="Alternativa per ' + esc(ex.tag) + '">';
@@ -703,7 +704,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   function blocksHtml() {
     var h = '';
     state.plan.blocks.forEach(function (b) {
-      var n0 = b.bigN || (b.items[0].sets || 3);
+      var n0 = b.bigN || Math.max.apply(null, b.items.map(setsFor));
       h += '<section class="block"><div class="block-h"><div><h2>' + esc(b.label) + '</h2><span class="cap">' + esc([b.note, b.rest].filter(Boolean).join(' · ')) + '</span></div><div class="big-n"><b>' + n0 + '</b><span>' + (b.bigU || (b.kind === 'ss' ? 'giri' : 'serie')) + '</span></div></div>';
       b.items.forEach(function (ex) { h += exHtml(ex); });
       h += '</section>';
@@ -819,6 +820,13 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
       var i = parseInt(setBtn.getAttribute('data-set'), 10);
       var arr = (state.done[ex.id] || []).slice(); arr[i] = !arr[i]; state.done[ex.id] = arr;
       save(); rerenderBlocks();
+    } else if (act && act.getAttribute('data-act') === 'sub') {
+      var cur = setsFor(ex);
+      if (cur > 1) {
+        state.extra[ex.id] = (state.extra[ex.id] || 0) - 1;
+        if (state.done[ex.id]) state.done[ex.id] = state.done[ex.id].slice(0, cur - 1);
+        save(); rerenderBlocks();
+      }
     } else if (act && act.getAttribute('data-act') === 'add') {
       state.extra[ex.id] = (state.extra[ex.id] || 0) + 1; save(); rerenderBlocks();
     } else if (act && act.getAttribute('data-act') === 'info') {
