@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Palli</title>
 <meta name="theme-color" content="#ece6d4">
-<meta name="palli-version" content="2026-11-03.1547">
+<meta name="palli-version" content="2026-11-03.1743">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Palli">
@@ -232,7 +232,23 @@ body.me { --bg: #14110f; --fg: #ece6d4; --sub: #a89f8a; --hair: rgba(236,230,212
 body.me .w-disc { background: #2a231d; }
 body.me .stage-bar h1 { text-shadow: 2px 2px 0 #3a2f27; }
 body.me .stage { border-bottom-color: var(--fg); }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: dense; gap: 10px; }
+.grid + .w.more { margin-top: 10px; }
+.wc { min-width: 0; }
+.wc > .w { height: 100%; width: 100%; }
+.wc.pop { animation: pop .3s ease; }
+@keyframes pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+.iorow { display: flex; justify-content: space-between; align-items: center; margin: 2px 0 10px; }
+.iorow .pillbtn { height: 38px; padding: 0 16px; }
+.addtile { cursor: pointer; align-items: center; justify-content: center; border-style: dashed; background: transparent; min-height: 100px; }
+.addtile .plus { font-family: var(--display); font-size: 2rem; line-height: 1; color: var(--red); }
+.wlist { display: flex; flex-direction: column; }
+.wrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--hair); }
+.wrow:first-child { border-top: 0; }
+.wrow b { display: block; font-size: 1rem; font-weight: 700; line-height: 1.15; }
+.rb { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; color: var(--fg); font-weight: 800; font-size: 1rem; padding: 0; display: grid; place-items: center; flex: none; }
+.rb:disabled { opacity: .3; }
+.rb.add { background: var(--red); border-color: var(--red); color: var(--beige); font-size: 1.3rem; }
 .w { background: #221c17; border: 1px solid var(--hair); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; color: var(--fg); text-align: left; font: inherit; }
 .w2 { grid-column: 1 / -1; }
 .w > h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; color: var(--sub); line-height: 1.2; }
@@ -813,7 +829,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   if (!state.form.touched) state.form.touched = {};
   if (typeof state.form.profile !== 'string') state.form.profile = '';
   function migrateMe() {
-    var d = { goals: [], perWeek: 3, time: 60, eq: 'g', level: 'i', injuries: [], weeks: 8, split: 'auto', focus: [] };
+    var d = { goals: [], perWeek: 3, time: 60, eq: 'g', level: 'i', injuries: [], weeks: 8, split: 'auto', focus: [], widgets: ['week', 'curve', 'plan', 'saved', 'recent'] };
     if (!state.me || typeof state.me !== 'object') state.me = {};
     if (state.me.goal && !Array.isArray(state.me.goals)) state.me.goals = [state.me.goal];
     delete state.me.goal;
@@ -1148,99 +1164,154 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     return h + '</div>';
   }
 
-  function renderMe(err) {
-    document.body.className = 'me'; setThemeColor('#14110f'); hideCta();
-    document.getElementById('timerbar').hidden = true;
-    var m = state.me, pr = state.program, h = '';
-    if (state.ui.flash) { h += '<p class="flash" role="status">' + esc(state.ui.flash) + '</p>'; state.ui.flash = ''; }
-    var cnt = weekCount(), ms = monthStats(), st = streakWeeks(), an = analyze(), series = weekSeries(8), recs = personalRecords();
-    h += '<div class="grid">';
+  // ---------- Widget dell'area personale ----------
+  var WIDGET_DEFAULT = ['week', 'curve', 'plan', 'saved', 'recent'];
+  var WIDGETS = {
+    week: { n: 'Questa settimana', d: 'Sedute fatte rispetto al tuo obiettivo', w2: false, html: function (c) {
+      var h = '<section class="w"><h2>Questa settimana</h2><div class="big' + (c.cnt >= c.m.perWeek ? ' red' : '') + '">' + c.cnt + '<small>/' + c.m.perWeek + '</small></div><div class="wk">';
+      for (var i = 1; i <= c.m.perWeek; i++) h += '<span class="wkc sm' + (i <= c.cnt ? ' on' : '') + '"></span>';
+      return h + '</div><p class="hint">sedute fatte</p></section>';
+    } },
+    streak: { n: 'Serie in obiettivo', d: 'Settimane di fila in cui raggiungi le sedute', w2: false, html: function (c) {
+      return '<section class="w"><h2>Serie in obiettivo</h2><div class="big' + (c.st ? ' red' : '') + '">' + c.st + '<small>sett.</small></div><p class="hint">' + (c.st ? 'settimane di fila con ' + c.m.perWeek + ' sedute' : 'raggiungi ' + c.m.perWeek + ' sedute in una settimana') + '</p></section>';
+    } },
+    monthSes: { n: 'Sedute del mese', d: 'Quante sedute dal primo del mese', w2: false, html: function (c) { return '<section class="w"><h2>Sedute del mese</h2><div class="big">' + c.ms.ses + '</div><p class="hint">dal primo del mese</p></section>'; } },
+    monthSets: { n: 'Serie del mese', d: 'Quante serie hai spuntato nel mese', w2: false, html: function (c) { return '<section class="w"><h2>Serie del mese</h2><div class="big">' + c.ms.sets + '</div><p class="hint">serie spuntate</p></section>'; } },
+    newcard: { n: 'Nuova scheda', d: 'Scorciatoia per creare la scheda di oggi', w2: false, html: function () { return '<button type="button" class="w tile" id="gohome"><h2>Nuova scheda</h2><span class="tile-t">Scegli cosa alleni oggi</span><span class="tile-a" aria-hidden="true">&rarr;</span></button>'; } },
+    curve: { n: 'Curva delle settimane', d: 'Serie fatte a settimana, ultime 8', w2: true, html: function (c) {
+      var s = c.series;
+      return '<section class="w"><h2>Curva delle ultime 8 settimane</h2>' + curveSvg(s) + '<p class="hint">Serie a settimana: ' + s[s.length - 1].sets + ' questa settimana, ' + s[s.length - 2].sets + ' la scorsa.</p></section>';
+    } },
+    plan: { n: 'Il mio piano', d: 'Giorni della settimana e prossima seduta', w2: true, html: function (c) {
+      var pr = c.pr, h = '<section class="w"><h2>Il mio piano</h2>';
+      if (pr && pr.days.length) {
+        var cur = curWeek(pr), over = cur > pr.weeks, ws = weekStart(Date.now()), nextI = -1;
+        pr.days.forEach(function (d, i) { if (nextI < 0 && !(d.last && weekStart(d.last) === ws)) nextI = i; });
+        h += '<p class="hint"><b>' + (over ? 'Piano concluso' : 'Settimana ' + cur + ' di ' + pr.weeks) + '</b> · ' + esc(goalsText(pr.goals)) + ' · ' + esc(LEVELS[pr.level] || '') + ' · ' + pr.perWeek + ' sedute · ' + pr.time + ' min</p><div class="wkgrid" aria-hidden="true">';
+        for (var k = 1; k <= pr.weeks; k++) { var n = weekTileCount(pr, k); h += '<span class="wt' + (n >= pr.perWeek ? ' on' : (n > 0 ? ' part' : '')) + (k === cur ? ' cur' : '') + '">' + k + '</span>'; }
+        h += '</div>';
+        if (pr.injuries && pr.injuries.length) h += '<p class="hint">Evito gli esercizi che caricano: ' + esc(injText(pr.injuries)) + '.</p>';
+        if (!over && cur % 4 === 0) h += '<p class="hint">Suggerimento facoltativo: questa settimana puoi alleggerire, con una serie in meno per esercizio.</p>';
+        h += '<div>';
+        pr.days.forEach(function (d, i) {
+          var done = d.last && weekStart(d.last) === ws;
+          h += '<div class="daycard' + (i === nextI ? ' next' : '') + '"><div><b>Giorno ' + (i + 1) + ': ' + esc(d.name) + '</b><span class="cap">' + esc(d.plan.meta.split(' · ').slice(0, 2).join(' · ')) + (done ? ' · fatta questa settimana' : '') + '</span></div><button type="button" class="pillbtn' + (i === nextI ? ' solid' : '') + '" data-openday="' + i + '">Apri</button></div>';
+        });
+        h += '</div><div class="rowbtns"><button type="button" class="pillbtn" id="editplan">' + (over ? 'Crea un nuovo piano' : 'Modifica e rigenera') + '</button></div>';
+      } else {
+        h += '<p class="hint">Rispondi a poche domande (obiettivi, livello, limitazioni, giorni) e ottieni una scheda per ogni giorno.</p><div class="rowbtns"><button type="button" class="pillbtn solid" id="mkplan">Crea il mio piano</button></div>';
+      }
+      return h + '</section>';
+    } },
+    zones: { n: 'Serie per zona', d: 'Dove hai lavorato negli ultimi 14 giorni', w2: true, html: function (c) {
+      var ids = ['petto', 'schiena', 'spalle', 'braccia', 'gambe', 'addome'], mx = 1, h = '<section class="w"><h2>Serie per zona, ultimi 14 giorni</h2>';
+      ids.forEach(function (id) { if (c.an.sets[id] > mx) mx = c.an.sets[id]; });
+      if (c.an.any) {
+        ids.forEach(function (id) { var v = c.an.sets[id]; h += '<div class="bar"><span class="bl">' + esc(macroOf(id).n.replace(' e glutei', '')) + '</span><span class="bt"><i style="width:' + Math.round(v / mx * 100) + '%"></i></span><span class="bv">' + v + '</span></div>'; });
+        h += '<p class="hint">' + esc(c.an.lines[c.an.lines.length - 1]) + '</p>';
+      } else h += '<p class="hint">Finisci qualche seduta con «Termina seduta»: qui compare quante serie hai fatto per ogni zona.</p>';
+      return h + '</section>';
+    } },
+    calendar: { n: 'Calendario', d: 'Giorni allenati nelle ultime 5 settimane', w2: true, html: function () { return '<section class="w"><h2>Calendario</h2>' + calendarHtml() + '<p class="hint">Ultime cinque settimane. I giorni con una seduta sono pieni.</p></section>'; } },
+    records: { n: 'Record di carico', d: 'Il carico più alto per esercizio', w2: true, html: function (c) {
+      var h = '<section class="w"><h2>Record di carico</h2>';
+      if (c.recs.length) c.recs.slice(0, 5).forEach(function (r) { h += '<div class="savedrow"><div><b>' + esc(r.n) + '</b><span class="cap">' + esc(fmtDate(r.t)) + '</span></div><span class="prv">' + String(r.kg).replace('.', ',') + ' kg</span></div>'; });
+      else h += '<p class="hint">Scrivi i kg di un esercizio e termina la seduta: il carico più alto di ogni esercizio compare qui.</p>';
+      return h + '</section>';
+    } },
+    saved: { n: 'Le mie schede', d: 'Le schede che hai salvato', w2: true, html: function () {
+      var h = '<section class="w"><h2>Le mie schede</h2>';
+      if (state.saved.length) {
+        h += '<div>';
+        state.saved.forEach(function (sv) {
+          var conf = state.ui.confirmDel === sv.id;
+          h += '<div class="savedrow"><div><b>' + esc(sv.name) + '</b><span class="cap">' + esc(sv.plan.meta.split(' · ')[0]) + ' · ' + esc(fmtDate(sv.t)) + '</span></div><div class="rowbtns"><button type="button" class="pillbtn solid" data-opensaved="' + esc(sv.id) + '">Apri</button><button type="button" class="pillbtn" data-delsaved="' + esc(sv.id) + '">' + (conf ? 'Conferma' : 'Elimina') + '</button></div></div>';
+        });
+        h += '</div>';
+      } else h += '<p class="hint">Nessuna scheda salvata. Dentro una scheda tocca «Salva scheda»: restano anche le alternative scelte, le serie e i carichi.</p>';
+      return h + '</section>';
+    } },
+    recent: { n: 'Ultime sedute', d: 'Le sedute chiuse, del piano o libere', w2: true, html: function () {
+      var h = '<section class="w"><h2>Ultime sedute</h2>';
+      if (state.history.length) {
+        h += '<div>';
+        state.history.slice(0, 6).forEach(function (x) { h += '<div class="savedrow"><div><b>' + esc(x.title) + '</b><span class="cap">' + esc(fmtDate(x.t)) + ' · ' + x.done + ' serie · ' + (x.day === null || x.day === undefined ? 'libera' : 'piano, giorno ' + (x.day + 1)) + '</span></div></div>'; });
+        h += '</div>';
+      } else h += '<p class="hint">Quando finisci una scheda tocca «Termina seduta»: la trovi qui, che sia del piano o fatta dalla home.</p>';
+      return h + '</section>';
+    } }
+  };
+  function haptic(ms) {
+    try {
+      if (state.ui.haptics === false) return;
+      if (navigator.vibrate) { navigator.vibrate(ms); return; }
+      // iPhone: Safari non ha vibrate(), ma l'interruttore nascosto restituisce un colpetto quando si commuta.
+      var lab = document.getElementById('hapticlab');
+      if (!lab) {
+        lab = document.createElement('label'); lab.id = 'hapticlab'; lab.setAttribute('aria-hidden', 'true');
+        lab.style.cssText = 'position:fixed;left:-100px;top:0;opacity:0;pointer-events:none;width:1px;height:1px;overflow:hidden';
+        var inp = document.createElement('input'); inp.type = 'checkbox'; inp.setAttribute('switch', ''); inp.tabIndex = -1;
+        lab.appendChild(inp); document.body.appendChild(lab);
+      }
+      lab.click();
+    } catch (e) {}
+  }
+  function widgetList() {
+    var seen = {}, out = [];
+    (state.me.widgets || []).forEach(function (id) { if (WIDGETS[id] && !seen[id]) { seen[id] = 1; out.push(id); } });
+    return out;
+  }
 
-    // Tessere piccole (due colonne)
-    h += '<section class="w"><h2>Questa settimana</h2><div class="big' + (cnt >= m.perWeek ? ' red' : '') + '">' + cnt + '<small>/' + m.perWeek + '</small></div><div class="wk">';
-    for (var i = 1; i <= m.perWeek; i++) h += '<span class="wkc sm' + (i <= cnt ? ' on' : '') + '"></span>';
-    h += '</div><p class="hint">sedute fatte</p></section>';
-    h += '<section class="w"><h2>Serie in obiettivo</h2><div class="big' + (st ? ' red' : '') + '">' + st + '<small>sett.</small></div><p class="hint">' + (st ? 'settimane di fila con ' + m.perWeek + ' sedute' : 'raggiungi ' + m.perWeek + ' sedute in una settimana') + '</p></section>';
-    h += '<section class="w"><h2>Sedute del mese</h2><div class="big">' + ms.ses + '</div><p class="hint">dal primo del mese</p></section>';
-    h += '<section class="w"><h2>Serie del mese</h2><div class="big">' + ms.sets + '</div><p class="hint">serie spuntate</p></section>';
-
-    // Azioni
-    h += '<button type="button" class="w tile" id="gohome"><h2>Nuova scheda</h2><span class="tile-t">Scegli cosa alleni oggi</span><span class="tile-a" aria-hidden="true">&rarr;</span></button>';
-    h += '<button type="button" class="w tile" id="' + (pr ? 'editplan' : 'mkplan') + '"><h2>' + (pr ? 'Piano' : 'Crea il piano') + '</h2><span class="tile-t">' + (pr ? 'Modifica e rigenera' : 'Obiettivi, livello, giorni') + '</span><span class="tile-a" aria-hidden="true">&rarr;</span></button>';
-
-    // Curva
-    h += '<section class="w w2"><h2>Curva delle ultime 8 settimane</h2>' + curveSvg(series) + '<p class="hint">Serie fatte a settimana: ' + series[series.length - 1].sets + ' questa settimana, ' + series[series.length - 2].sets + ' la scorsa.</p></section>';
-
-    // Il mio piano
-    h += '<section class="w w2"><h2>Il mio piano</h2>';
-    if (pr && pr.days.length) {
-      var cur = curWeek(pr), over = cur > pr.weeks, ws = weekStart(Date.now()), nextI = -1;
-      pr.days.forEach(function (d, i) { if (nextI < 0 && !(d.last && weekStart(d.last) === ws)) nextI = i; });
-      h += '<p class="hint"><b>' + (over ? 'Piano concluso' : 'Settimana ' + cur + ' di ' + pr.weeks) + '</b> · ' + esc(goalsText(pr.goals)) + ' · ' + esc(LEVELS[pr.level] || '') + ' · ' + pr.perWeek + ' sedute · ' + pr.time + ' min</p>';
-      h += '<div class="wkgrid" aria-hidden="true">';
-      for (var k = 1; k <= pr.weeks; k++) { var c = weekTileCount(pr, k); h += '<span class="wt' + (c >= pr.perWeek ? ' on' : (c > 0 ? ' part' : '')) + (k === cur ? ' cur' : '') + '">' + k + '</span>'; }
-      h += '</div>';
-      if (pr.injuries && pr.injuries.length) h += '<p class="hint">Evito gli esercizi che caricano: ' + esc(injText(pr.injuries)) + '.</p>';
-      if (!over && cur % 4 === 0) h += '<p class="hint">Suggerimento facoltativo: questa settimana puoi alleggerire, con una serie in meno per esercizio.</p>';
-      h += '<div>';
-      pr.days.forEach(function (d, i) {
-        var done = d.last && weekStart(d.last) === ws;
-        h += '<div class="daycard' + (i === nextI ? ' next' : '') + '"><div><b>Giorno ' + (i + 1) + ': ' + esc(d.name) + '</b><span class="cap">' + esc(d.plan.meta.split(' · ').slice(0, 2).join(' · ')) + (done ? ' · fatta questa settimana' : '') + '</span></div><button type="button" class="pillbtn' + (i === nextI ? ' solid' : '') + '" data-openday="' + i + '">Apri</button></div>';
-      });
-      h += '</div>';
-    } else h += '<p class="hint">Rispondi a poche domande (obiettivi, livello, limitazioni, giorni) e ottieni una scheda per ogni giorno.</p>';
-    if (err) h += '<p class="err" role="alert">' + esc(err) + '</p>';
-    h += '</section>';
-
-    // Distribuzione per zona
-    var five = ['petto', 'schiena', 'spalle', 'braccia', 'gambe', 'addome'], mx = 1;
-    five.forEach(function (id) { if (an.sets[id] > mx) mx = an.sets[id]; });
-    h += '<section class="w w2"><h2>Serie per zona, ultimi 14 giorni</h2>';
-    if (an.any) {
-      five.forEach(function (id) { var v = an.sets[id]; h += '<div class="bar"><span class="bl">' + esc(macroOf(id).n.replace(' e glutei', '')) + '</span><span class="bt"><i style="width:' + Math.round(v / mx * 100) + '%"></i></span><span class="bv">' + v + '</span></div>'; });
-      h += '<p class="hint">' + esc(an.lines[an.lines.length - 1]) + '</p>';
-    } else h += '<p class="hint">Finisci qualche seduta con «Termina seduta»: qui compare quante serie hai fatto per ogni zona.</p>';
-    h += '</section>';
-
-    // Calendario
-    h += '<section class="w w2"><h2>Calendario</h2>' + calendarHtml() + '<p class="hint">Ultime cinque settimane. I giorni con una seduta sono pieni.</p></section>';
-
-    // Record personali
-    h += '<section class="w w2"><h2>Record di carico</h2>';
-    if (recs.length) {
-      recs.slice(0, 5).forEach(function (r) { h += '<div class="savedrow"><div><b>' + esc(r.n) + '</b><span class="cap">' + esc(fmtDate(r.t)) + '</span></div><span class="prv">' + String(r.kg).replace('.', ',') + ' kg</span></div>'; });
-    } else h += '<p class="hint">Scrivi i kg di un esercizio e termina la seduta: il carico più alto di ogni esercizio compare qui.</p>';
-    h += '</section>';
-
-    // Schede salvate
-    h += '<section class="w w2"><h2>Le mie schede</h2>';
-    if (state.saved.length) {
-      h += '<div>';
-      state.saved.forEach(function (sv) {
-        var conf = state.ui.confirmDel === sv.id;
-        h += '<div class="savedrow"><div><b>' + esc(sv.name) + '</b><span class="cap">' + esc(sv.plan.meta.split(' · ')[0]) + ' · ' + esc(fmtDate(sv.t)) + '</span></div><div class="rowbtns"><button type="button" class="pillbtn solid" data-opensaved="' + esc(sv.id) + '">Apri</button><button type="button" class="pillbtn" data-delsaved="' + esc(sv.id) + '">' + (conf ? 'Conferma' : 'Elimina') + '</button></div></div>';
-      });
-      h += '</div>';
-    } else h += '<p class="hint">Nessuna scheda salvata. Dentro una scheda tocca «Salva scheda»: restano anche le alternative scelte, le serie e i carichi.</p>';
-    h += '</section>';
-
-    // Ultime sedute
-    h += '<section class="w w2"><h2>Ultime sedute</h2>';
-    if (state.history.length) {
-      h += '<div>';
-      state.history.slice(0, 6).forEach(function (x) { h += '<div class="savedrow"><div><b>' + esc(x.title) + '</b><span class="cap">' + esc(fmtDate(x.t)) + ' · ' + x.done + ' serie · ' + (x.day === null || x.day === undefined ? 'libera' : 'piano, giorno ' + (x.day + 1)) + '</span></div></div>'; });
-      h += '</div>';
-    } else h += '<p class="hint">Quando finisci una scheda tocca «Termina seduta»: la trovi qui, che sia del piano o fatta dalla home.</p>';
-    h += '</section>';
-
-    // Backup
-    h += '<details class="w w2 more" data-ui="bk"' + (state.ui.bk ? ' open' : '') + '><summary><b>Backup</b><span class="cap">I dati sono solo su questo browser</span></summary><div class="subpanel"><p class="hint">Copia questo testo per spostare schede, piano, storico e carichi su un altro dispositivo.</p><textarea class="bk" id="bktext" readonly aria-label="Backup">' + esc(backupText()) + '</textarea><div class="rowbtns"><button type="button" class="pillbtn solid" id="bkcopy">Copia</button></div><h3>Ripristina</h3><p class="hint">Incolla un backup qui sotto. Sostituisce schede, piano, storico e carichi di questo dispositivo.</p><textarea class="bk" id="bkin" aria-label="Incolla il backup"></textarea><div class="rowbtns"><button type="button" class="pillbtn" id="bkgo">Ripristina</button></div><p class="err" id="bkmsg" role="status"></p></div></details>';
+  function dataPanel() {
     var cr = state.ui.confirmReset || '';
     function rbtn(k, label) { return '<button type="button" class="pillbtn' + (cr === k ? ' solid' : '') + '" data-reset="' + k + '">' + (cr === k ? 'Conferma' : label) + '</button>'; }
-    h += '<section class="w w2"><h2>Dati</h2><p class="hint">Non si può annullare. Se vuoi conservare qualcosa, copia prima il backup qui sopra.</p><div class="rowbtns" style="flex-wrap:wrap">' + rbtn('act', 'Azzera attività') + rbtn('plans', 'Cancella schede e piano') + rbtn('all', 'Cancella tutto') + (cr ? '<button type="button" class="pillbtn" data-reset="no">Annulla</button>' : '') + '</div>' + (cr ? '<p class="hint"><b>' + (cr === 'act' ? 'Cancella storico, calendario, record, carichi e spunte. Schede e piano restano.' : (cr === 'plans' ? 'Cancella le schede salvate, il piano e la scheda in corso. Lo storico resta.' : 'Cancella tutto: storico, schede, piano, carichi, obiettivi e limitazioni.')) + '</b> Tocca ancora per confermare.</p>' : '<p class="hint">Attività: storico, calendario, record e carichi. Schede e piano: quello che hai creato. Tutto: anche gli obiettivi.</p>') + '</section>';
-    h += '<section class="w w2"><h2>App</h2><p class="hint">Versione ' + esc(VERSION && VERSION.indexOf('__') !== 0 ? VERSION : 'di sviluppo') + '. Se non vedi le novità, aggiorna: ricarica la pagina saltando la copia salvata.</p><div class="rowbtns"><button type="button" class="pillbtn solid" id="updnow">Aggiorna ora</button></div></section>';
-    h += '</div>';
+    var h = '<details class="w w2 more" data-ui="data"' + (state.ui.data ? ' open' : '') + '><summary><b>Dati e app</b><span class="cap">Backup, azzeramento, aggiornamento, vibrazione</span></summary>';
+    h += '<div class="subpanel"><h3>Backup</h3><p class="hint">Copia questo testo per spostare schede, piano, storico e carichi su un altro dispositivo.</p><textarea class="bk" id="bktext" readonly aria-label="Backup">' + esc(backupText()) + '</textarea><div class="rowbtns"><button type="button" class="pillbtn solid" id="bkcopy">Copia</button></div><p class="hint">Per ripristinare, incolla un backup qui. Sostituisce schede, piano, storico e carichi di questo dispositivo.</p><textarea class="bk" id="bkin" aria-label="Incolla il backup"></textarea><div class="rowbtns"><button type="button" class="pillbtn" id="bkgo">Ripristina</button></div><p class="err" id="bkmsg" role="status"></p></div>';
+    h += '<div class="subpanel"><h3>Azzera</h3><p class="hint">Non si può annullare. Se vuoi conservare qualcosa, fai prima il backup.</p><div class="rowbtns" style="flex-wrap:wrap">' + rbtn('act', 'Azzera attività') + rbtn('plans', 'Cancella schede e piano') + rbtn('all', 'Cancella tutto') + (cr ? '<button type="button" class="pillbtn" data-reset="no">Annulla</button>' : '') + '</div>';
+    h += (cr ? '<p class="hint"><b>' + (cr === 'act' ? 'Cancella storico, calendario, record, carichi e spunte. Schede e piano restano.' : (cr === 'plans' ? 'Cancella le schede salvate, il piano e la scheda in corso. Lo storico resta.' : 'Cancella tutto: storico, schede, piano, carichi, obiettivi, limitazioni e widget.')) + '</b> Tocca ancora per confermare.</p>' : '') + '</div>';
+    h += '<div class="subpanel"><h3>App</h3><p class="hint">Versione ' + esc(VERSION && VERSION.indexOf('__') !== 0 ? VERSION : 'di sviluppo') + '. Se non vedi le novità, aggiorna: ricarica la pagina saltando la copia salvata.</p><div class="rowbtns" style="flex-wrap:wrap"><button type="button" class="pillbtn solid" id="updnow">Aggiorna ora</button><button type="button" class="pillbtn" id="hapticbtn" aria-pressed="' + (state.ui.haptics !== false) + '">Vibrazione: ' + (state.ui.haptics !== false ? 'sì' : 'no') + '</button></div></div></details>';
+    return h;
+  }
+
+  function renderMe(err) {
+    if (state.ui.wedit) { renderWidgetEditor(); return; }
+    document.body.className = 'me'; setThemeColor('#14110f'); hideCta();
+    document.getElementById('timerbar').hidden = true;
+    var h = '';
+    if (state.ui.flash) { h += '<p class="flash" role="status">' + esc(state.ui.flash) + '</p>'; state.ui.flash = ''; }
+    var ctx = { m: state.me, pr: state.program, cnt: weekCount(), ms: monthStats(), st: streakWeeks(), an: analyze(), series: weekSeries(8), recs: personalRecords() };
+    h += '<div class="iorow"><span class="cap">I tuoi widget</span><button type="button" class="pillbtn" id="wedit">Modifica</button></div><div class="grid">';
+    widgetList().forEach(function (id) { var w = WIDGETS[id]; h += '<div class="wc' + (w.w2 ? ' w2' : '') + (state.ui.lastAdded === id ? ' pop' : '') + '" data-wid="' + id + '">' + w.html(ctx) + '</div>'; });
+    h += '<div class="wc"><button type="button" class="w tile addtile" id="wedit2" aria-label="Aggiungi un widget"><span class="plus" aria-hidden="true">+</span><span class="tile-t">Aggiungi</span></button></div></div>';
+    if (err) h += '<p class="err" role="alert">' + esc(err) + '</p>';
+    h += dataPanel();
     document.getElementById('app').innerHTML = h;
+    var added = state.ui.lastAdded; state.ui.lastAdded = '';
+    updateWheel();
+    if (added) { var el = document.querySelector('[data-wid="' + added + '"]'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  }
+
+  // Editor dei widget: elenco compatto, un tocco per spostare, togliere o aggiungere.
+  function renderWidgetEditor() {
+    document.body.className = 'me'; setThemeColor('#14110f');
+    document.getElementById('timerbar').hidden = true;
+    var list = widgetList(), h = '<section class="w w2"><h2>I tuoi widget</h2><p class="hint">Sposta con le frecce, togli con la x. I dati restano: un widget tolto si può riaggiungere.</p><div class="wlist">';
+    list.forEach(function (id, i) {
+      var w = WIDGETS[id];
+      h += '<div class="wrow"><div><b>' + esc(w.n) + '</b><span class="cap">' + (w.w2 ? 'riga intera' : 'mezza riga') + '</span></div><div class="rowbtns"><button type="button" class="rb" data-wup="' + id + '" aria-label="Sposta su ' + esc(w.n) + '"' + (i === 0 ? ' disabled' : '') + '>&uarr;</button><button type="button" class="rb" data-wdown="' + id + '" aria-label="Sposta giù ' + esc(w.n) + '"' + (i === list.length - 1 ? ' disabled' : '') + '>&darr;</button><button type="button" class="rb" data-wrm="' + id + '" aria-label="Togli ' + esc(w.n) + '">&times;</button></div></div>';
+    });
+    if (!list.length) h += '<p class="hint">Nessun widget: aggiungine qualcuno qui sotto.</p>';
+    h += '</div></section>';
+    var hidden = Object.keys(WIDGETS).filter(function (id) { return list.indexOf(id) < 0; });
+    h += '<section class="w w2"><h2>Aggiungi</h2>';
+    if (hidden.length) {
+      h += '<div class="wlist">';
+      hidden.forEach(function (id) { var w = WIDGETS[id]; h += '<div class="wrow"><div><b>' + esc(w.n) + '</b><span class="cap">' + esc(w.d) + '</span></div><button type="button" class="rb add" data-wadd="' + id + '" aria-label="Aggiungi ' + esc(w.n) + '">+</button></div>'; });
+      h += '</div>';
+    } else h += '<p class="hint">Hai già tutti i widget.</p>';
+    h += '<div class="rowbtns"><button type="button" class="pillbtn" id="wreset">Ripristina i widget base</button></div></section>';
+    document.getElementById('app').innerHTML = h;
+    setCta(list.length + (list.length === 1 ? ' widget' : ' widget'), '<button type="button" class="ctabtn" id="wdone">Fine</button>');
     updateWheel();
   }
 
@@ -1412,11 +1483,11 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   }
   document.getElementById('mebtn').addEventListener('click', function () {
     if (state.view === 'me' || state.view === 'wiz') resetForm();
-    state.view = (state.view === 'me' || state.view === 'wiz') ? 'setup' : 'me'; state.ui.confirmDel = ''; state.ui.confirmReset = ''; save(); render(); document.getElementById('scroll').scrollTop = 0;
+    state.view = (state.view === 'me' || state.view === 'wiz') ? 'setup' : 'me'; state.ui.confirmDel = ''; state.ui.confirmReset = ''; state.ui.wedit = false; save(); render(); document.getElementById('scroll').scrollTop = 0;
   });
   document.getElementById('home').addEventListener('click', function () {
     if (state.view !== 'setup') resetForm();
-    state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0;
+    state.ui.wedit = false; state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0;
   });
   var stageHidden = false;
   function applyStage() {
@@ -1481,6 +1552,16 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     if (state.view === 'me') {
       var meEl;
       if (t.id === 'updnow') { forceUpdate(); return; }
+      if (t.id === 'hapticbtn') { state.ui.haptics = state.ui.haptics === false; save(); if (state.ui.haptics !== false) haptic(25); renderMe(); return; }
+      if (t.closest('#wedit') || t.closest('#wedit2')) { state.ui.wedit = true; save(); renderMe(); document.getElementById('scroll').scrollTop = 0; return; }
+      if (t.id === 'wdone') { state.ui.wedit = false; save(); renderMe(); document.getElementById('scroll').scrollTop = 0; return; }
+      var wb, wl = widgetList();
+      function wmove(id, d) { var i = wl.indexOf(id), j = i + d; if (i < 0 || j < 0 || j >= wl.length) return; var x = wl[i]; wl[i] = wl[j]; wl[j] = x; state.me.widgets = wl; save(); renderMe(); }
+      if ((wb = t.closest('[data-wup]'))) { wmove(wb.getAttribute('data-wup'), -1); return; }
+      if ((wb = t.closest('[data-wdown]'))) { wmove(wb.getAttribute('data-wdown'), 1); return; }
+      if ((wb = t.closest('[data-wrm]'))) { state.me.widgets = wl.filter(function (id) { return id !== wb.getAttribute('data-wrm'); }); save(); renderMe(); return; }
+      if ((wb = t.closest('[data-wadd]'))) { var nid = wb.getAttribute('data-wadd'); if (wl.indexOf(nid) < 0) wl.push(nid); state.me.widgets = wl; state.ui.lastAdded = nid; state.ui.wedit = false; save(); renderMe(); return; }
+      if (t.id === 'wreset') { state.me.widgets = WIDGET_DEFAULT.slice(); save(); renderMe(); return; }
       var rs = t.closest('[data-reset]');
       if (rs) {
         var rk = rs.getAttribute('data-reset');
@@ -1500,7 +1581,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
         }
         save(); renderMe(); document.getElementById('scroll').scrollTop = 0; return;
       }
-      if (t.closest('#gohome')) { resetForm(); state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
+      if (t.closest('#gohome')) { resetForm(); state.ui.wedit = false; state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
       if (t.closest('#mkplan') || t.closest('#editplan')) { state.view = 'wiz'; state.ui.wstep = 1; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
       if ((meEl = t.closest('[data-openday]'))) {
         var di = parseInt(meEl.getAttribute('data-openday'), 10), dd = state.program && state.program.days[di];
@@ -1638,9 +1719,12 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     var bar = document.getElementById('gbar'), aL = document.getElementById('garml'), aR = document.getElementById('garmr'), hL = document.getElementById('ghl'), hR = document.getElementById('ghr');
     var TH = 84, MAXPULL = 130, FLOOR = 107, TOP = 18, y0 = null, pull = 0, busy = false, shakeId = 0, lastShake = 0, buzzed = false;
     var gor = document.getElementById('gor'), calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var lastBuzz = 0;
     function tremor(ts) {
-      if (ts - lastShake > 33) {
-        var k = Math.min(1, pull / TH), amp = k * k * 2;
+      var k = Math.min(1, pull / TH);
+      if (ts - lastBuzz > 95 - 60 * k) { haptic(Math.round(6 + 14 * k)); lastBuzz = ts; }
+      if (!calm && ts - lastShake > 33) {
+        var amp = k * k * 2;
         gor.style.transform = 'translate(' + ((Math.random() - .5) * 2 * amp).toFixed(2) + 'px,' + ((Math.random() - .5) * 1.2 * amp).toFixed(2) + 'px)';
         lastShake = ts;
       }
@@ -1659,7 +1743,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
       var y = from, v = 0, bounces = 0, handY = from;
       (function step() {
         v += 1.15; y += v; handY = Math.min(handY + v * 0.7, 100);
-        if (y >= FLOOR) { y = FLOOR; if (bounces < 2 && v > 5) { v = -v * 0.32; bounces++; } else { setPose(y, handY); return done(); } }
+        if (y >= FLOOR) { y = FLOOR; if (v > 5) haptic(Math.min(60, Math.round(v * 4))); if (bounces < 2 && v > 5) { v = -v * 0.32; bounces++; } else { setPose(y, handY); return done(); } }
         setPose(y, handY); requestAnimationFrame(step);
       })();
     }
@@ -1679,8 +1763,8 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
       if (dy <= 0 || sc.scrollTop > 0) { if (pull) { pull = 0; box.style.height = '0px'; setPose(FLOOR); stopTremor(); } return; }
       if (e.cancelable) e.preventDefault();
       pull = Math.min(MAXPULL, dy * 0.55); box.style.height = pull + 'px';
-      if (!shakeId && !calm) shakeId = requestAnimationFrame(tremor);
-      if (pull >= TH && !buzzed) { buzzed = true; try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {} } else if (pull < TH) buzzed = false;
+      if (!shakeId) shakeId = requestAnimationFrame(tremor);
+      if (pull >= TH && !buzzed) { buzzed = true; haptic(30); setTimeout(function () { haptic(30); }, 90); } else if (pull < TH) buzzed = false;
       setPose(byFor(Math.min(1, pull / TH)));
       cap.textContent = pull >= TH ? 'Rilascia' : 'Tira';
     }, { passive: false });
