@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Palli</title>
 <meta name="theme-color" content="#ece6d4">
+<meta name="palli-version" content="2026-11-03.1542">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Palli">
@@ -260,6 +261,9 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
 .prv { font-family: var(--display); font-size: 1.15rem; color: var(--red); flex: none; }
 .w.more { padding: 14px; border-top: 1px solid var(--hair); }
 .w .subpanel h3 { color: var(--fg); }
+.upd { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; padding: 10px 12px 10px 16px; border-radius: 99px; background: var(--fg); color: var(--on-dark); font-weight: 700; }
+.upd[hidden] { display: none; }
+.upd .pillbtn { height: 38px; padding: 0 16px; }
 </style>
 </head>
 <body class="setup">
@@ -299,6 +303,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
       <span class="ptr-cap" id="ptrcap"></span>
     </div>
     <div class="wrap">
+      <div class="upd" id="upd" hidden><span>C'è una versione nuova.</span><button type="button" class="pillbtn solid" id="updgo">Aggiorna</button></div>
       <div id="app"><div class="nojs"><b>Questa anteprima non esegue gli script.</b><p>La scheda funziona solo aprendo il file in un browser: salva il file, poi aprilo con Safari o Chrome. Se è online, apri il link nel browser invece che nell'anteprima di un'app di messaggi o di file.</p></div></div>
       <footer>I tuoi dati restano su questo browser. In «Io» trovi il backup per spostarli su un altro dispositivo.</footer>
     </div>
@@ -823,6 +828,21 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   function resetForm() { state.form = { area: '', macros: [], sub: {}, time: 60, style: 'ss', eq: (state.me && state.me.eq) || 'g', level: (state.me && state.me.level) || 'i', profile: '', injuries: (state.me && state.me.injuries ? state.me.injuries.slice() : []), touched: {} }; }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
+  var VERSION = (document.querySelector('meta[name="palli-version"]') || {}).content || '';
+  // Carica di nuovo la pagina saltando la copia salvata dal browser (l'indirizzo cambia solo per la query).
+  function forceUpdate() {
+    try { save(); sessionStorage.setItem('palli-keep', '1'); } catch (e) {}
+    location.replace(location.pathname + '?r=' + Date.now());
+  }
+  var lastCheck = 0;
+  function checkUpdate() {
+    if (!VERSION || VERSION.indexOf('__') === 0 || Date.now() - lastCheck < 60000 || !window.fetch) return;
+    lastCheck = Date.now();
+    fetch(location.pathname + '?c=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+      var m = /name="palli-version" content="([^"]+)"/.exec(t || '');
+      if (m && m[1] !== VERSION) document.getElementById('upd').hidden = false;
+    }).catch(function () {});
+  }
   function setThemeColor(c) { var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', c); }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function setsFor(ex) { return Math.max(1, (ex.sets || 3) + (state.extra[ex.id] || 0)); }
@@ -1215,6 +1235,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
 
     // Backup
     h += '<details class="w w2 more" data-ui="bk"' + (state.ui.bk ? ' open' : '') + '><summary><b>Backup</b><span class="cap">I dati sono solo su questo browser</span></summary><div class="subpanel"><p class="hint">Copia questo testo per spostare schede, piano, storico e carichi su un altro dispositivo.</p><textarea class="bk" id="bktext" readonly aria-label="Backup">' + esc(backupText()) + '</textarea><div class="rowbtns"><button type="button" class="pillbtn solid" id="bkcopy">Copia</button></div><h3>Ripristina</h3><p class="hint">Incolla un backup qui sotto. Sostituisce schede, piano, storico e carichi di questo dispositivo.</p><textarea class="bk" id="bkin" aria-label="Incolla il backup"></textarea><div class="rowbtns"><button type="button" class="pillbtn" id="bkgo">Ripristina</button></div><p class="err" id="bkmsg" role="status"></p></div></details>';
+    h += '<section class="w w2"><h2>App</h2><p class="hint">Versione ' + esc(VERSION && VERSION.indexOf('__') !== 0 ? VERSION : 'di sviluppo') + '. Se non vedi le novità, aggiorna: ricarica la pagina saltando la copia salvata.</p><div class="rowbtns"><button type="button" class="pillbtn solid" id="updnow">Aggiorna ora</button></div></section>';
     h += '</div>';
     document.getElementById('app').innerHTML = h;
     updateWheel();
@@ -1456,6 +1477,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     }
     if (state.view === 'me') {
       var meEl;
+      if (t.id === 'updnow') { forceUpdate(); return; }
       if (t.closest('#gohome')) { resetForm(); state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
       if (t.closest('#mkplan') || t.closest('#editplan')) { state.view = 'wiz'; state.ui.wstep = 1; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
       if ((meEl = t.closest('[data-openday]'))) {
@@ -1612,7 +1634,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     function release(refresh) {
       busy = true; cap.textContent = refresh ? 'Aggiorno' : '';
       drop(byFor(Math.min(1, pull / TH)), function () {
-        if (refresh) { try { save(); sessionStorage.setItem('palli-keep', '1'); } catch (e) {} setTimeout(function () { location.reload(); }, 150); return; }
+        if (refresh) { setTimeout(forceUpdate, 150); return; }
         box.style.transition = 'height .22s ease'; box.style.height = '0px';
         setTimeout(function () { box.style.transition = ''; setPose(FLOOR); pull = 0; busy = false; cap.textContent = ''; }, 240);
       });
@@ -1633,6 +1655,9 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     sc.addEventListener('touchcancel', end, { passive: true });
   })();
 
+  document.getElementById('updgo').addEventListener('click', forceUpdate);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) checkUpdate(); });
+  setTimeout(checkUpdate, 1500);
   render();
 })();
 </script>
