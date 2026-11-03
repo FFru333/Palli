@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Palli</title>
 <meta name="theme-color" content="#ece6d4">
-<meta name="palli-version" content="2026-11-03.1542">
+<meta name="palli-version" content="2026-11-03.1547">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Palli">
@@ -225,7 +225,7 @@ body.has-cta .scroll { padding-bottom: 108px; }
 .wt.on { background: var(--red); border-color: var(--red); color: var(--beige); opacity: 1; }
 .wt.cur { opacity: 1; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--fg); }
 .ptr { position: relative; height: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; color: var(--fg); }
-.ptr svg { display: block; width: 100%; height: 100%; max-height: 130px; }
+.ptr svg { will-change: transform; display: block; width: 100%; height: 100%; max-height: 130px; }
 .ptr-cap { position: absolute; bottom: 8px; left: 16px; text-align: left; font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: .72rem; }
 /* Area personale: stessa palette, versione scura a widget */
 body.me { --bg: #14110f; --fg: #ece6d4; --sub: #a89f8a; --hair: rgba(236,230,212,.22); --accent: var(--red); --accent-ink: #ece6d4; --on-dark: #14110f; --sat-bg: #ece6d4; --arc: var(--red); color-scheme: dark; background-image: repeating-linear-gradient(90deg, rgba(236,230,212,.03) 0 1px, transparent 1px 4px); }
@@ -286,19 +286,19 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   <div class="scroll" id="scroll">
     <div class="ptr" id="ptr" aria-hidden="true">
       <svg id="gor" viewBox="0 0 200 130" preserveAspectRatio="xMidYMax meet" focusable="false">
-        <rect x="24" y="124" width="152" height="3" rx="1.5" fill="#14110f" opacity=".25"/>
+        <rect x="24" y="124" width="152" height="3" rx="1.5" fill="currentColor" opacity=".25"/>
         <g id="gbar">
-          <rect x="22" y="-1.5" width="156" height="3" rx="1.5" fill="#14110f"/>
+          <rect x="22" y="-1.5" width="156" height="3" rx="1.5" fill="currentColor"/>
           <rect x="22" y="-17" width="7" height="34" rx="2" fill="#d2362b"/><rect x="31" y="-12" width="6" height="24" rx="2" fill="#d2362b"/>
           <rect x="171" y="-17" width="7" height="34" rx="2" fill="#d2362b"/><rect x="163" y="-12" width="6" height="24" rx="2" fill="#d2362b"/>
         </g>
-        <path id="garml" d="" stroke="#14110f" stroke-width="11" stroke-linecap="round" fill="none"/>
-        <path id="garmr" d="" stroke="#14110f" stroke-width="11" stroke-linecap="round" fill="none"/>
-        <path d="M62 124 Q56 86 80 72 L120 72 Q144 86 138 124 Z" fill="#14110f"/>
-        <circle cx="100" cy="58" r="17" fill="#14110f"/>
-        <ellipse cx="100" cy="62" rx="10" ry="8" fill="#ece6d4"/>
-        <circle cx="96" cy="60" r="1.7" fill="#14110f"/><circle cx="104" cy="60" r="1.7" fill="#14110f"/>
-        <circle id="ghl" r="6.5" fill="#14110f"/><circle id="ghr" r="6.5" fill="#14110f"/>
+        <path id="garml" d="" stroke="currentColor" stroke-width="11" stroke-linecap="round" fill="none"/>
+        <path id="garmr" d="" stroke="currentColor" stroke-width="11" stroke-linecap="round" fill="none"/>
+        <path d="M62 124 Q56 86 80 72 L120 72 Q144 86 138 124 Z" fill="currentColor"/>
+        <circle cx="100" cy="58" r="17" fill="currentColor"/>
+        <ellipse cx="100" cy="62" rx="10" ry="8" style="fill: var(--bg)"/>
+        <circle cx="96" cy="60" r="1.7" fill="currentColor"/><circle cx="104" cy="60" r="1.7" fill="currentColor"/>
+        <circle id="ghl" r="6.5" fill="currentColor"/><circle id="ghr" r="6.5" fill="currentColor"/>
       </svg>
       <span class="ptr-cap" id="ptrcap"></span>
     </div>
@@ -1235,6 +1235,9 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
 
     // Backup
     h += '<details class="w w2 more" data-ui="bk"' + (state.ui.bk ? ' open' : '') + '><summary><b>Backup</b><span class="cap">I dati sono solo su questo browser</span></summary><div class="subpanel"><p class="hint">Copia questo testo per spostare schede, piano, storico e carichi su un altro dispositivo.</p><textarea class="bk" id="bktext" readonly aria-label="Backup">' + esc(backupText()) + '</textarea><div class="rowbtns"><button type="button" class="pillbtn solid" id="bkcopy">Copia</button></div><h3>Ripristina</h3><p class="hint">Incolla un backup qui sotto. Sostituisce schede, piano, storico e carichi di questo dispositivo.</p><textarea class="bk" id="bkin" aria-label="Incolla il backup"></textarea><div class="rowbtns"><button type="button" class="pillbtn" id="bkgo">Ripristina</button></div><p class="err" id="bkmsg" role="status"></p></div></details>';
+    var cr = state.ui.confirmReset || '';
+    function rbtn(k, label) { return '<button type="button" class="pillbtn' + (cr === k ? ' solid' : '') + '" data-reset="' + k + '">' + (cr === k ? 'Conferma' : label) + '</button>'; }
+    h += '<section class="w w2"><h2>Dati</h2><p class="hint">Non si può annullare. Se vuoi conservare qualcosa, copia prima il backup qui sopra.</p><div class="rowbtns" style="flex-wrap:wrap">' + rbtn('act', 'Azzera attività') + rbtn('plans', 'Cancella schede e piano') + rbtn('all', 'Cancella tutto') + (cr ? '<button type="button" class="pillbtn" data-reset="no">Annulla</button>' : '') + '</div>' + (cr ? '<p class="hint"><b>' + (cr === 'act' ? 'Cancella storico, calendario, record, carichi e spunte. Schede e piano restano.' : (cr === 'plans' ? 'Cancella le schede salvate, il piano e la scheda in corso. Lo storico resta.' : 'Cancella tutto: storico, schede, piano, carichi, obiettivi e limitazioni.')) + '</b> Tocca ancora per confermare.</p>' : '<p class="hint">Attività: storico, calendario, record e carichi. Schede e piano: quello che hai creato. Tutto: anche gli obiettivi.</p>') + '</section>';
     h += '<section class="w w2"><h2>App</h2><p class="hint">Versione ' + esc(VERSION && VERSION.indexOf('__') !== 0 ? VERSION : 'di sviluppo') + '. Se non vedi le novità, aggiorna: ricarica la pagina saltando la copia salvata.</p><div class="rowbtns"><button type="button" class="pillbtn solid" id="updnow">Aggiorna ora</button></div></section>';
     h += '</div>';
     document.getElementById('app').innerHTML = h;
@@ -1409,7 +1412,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   }
   document.getElementById('mebtn').addEventListener('click', function () {
     if (state.view === 'me' || state.view === 'wiz') resetForm();
-    state.view = (state.view === 'me' || state.view === 'wiz') ? 'setup' : 'me'; state.ui.confirmDel = ''; save(); render(); document.getElementById('scroll').scrollTop = 0;
+    state.view = (state.view === 'me' || state.view === 'wiz') ? 'setup' : 'me'; state.ui.confirmDel = ''; state.ui.confirmReset = ''; save(); render(); document.getElementById('scroll').scrollTop = 0;
   });
   document.getElementById('home').addEventListener('click', function () {
     if (state.view !== 'setup') resetForm();
@@ -1478,6 +1481,25 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     if (state.view === 'me') {
       var meEl;
       if (t.id === 'updnow') { forceUpdate(); return; }
+      var rs = t.closest('[data-reset]');
+      if (rs) {
+        var rk = rs.getAttribute('data-reset');
+        if (rk === 'no') { state.ui.confirmReset = ''; renderMe(); return; }
+        if (state.ui.confirmReset !== rk) { state.ui.confirmReset = rk; renderMe(); return; }
+        state.ui.confirmReset = '';
+        if (rk === 'act') {
+          state.history = []; state.kg = {}; state.done = {}; state.extra = {}; state.opt = {}; state.info = {};
+          if (state.program) state.program.days.forEach(function (d) { delete d.last; });
+          state.ui.flash = 'Attività azzerata.';
+        } else if (rk === 'plans') {
+          state.saved = []; state.program = null; state.plan = null; state.done = {}; state.extra = {}; state.opt = {}; state.info = {};
+          state.ui.flash = 'Schede e piano cancellati.';
+        } else {
+          state.history = []; state.kg = {}; state.done = {}; state.extra = {}; state.opt = {}; state.info = {}; state.saved = []; state.program = null; state.plan = null; state.me = {}; migrateMe();
+          state.ui = { flash: 'Tutto cancellato.' }; resetForm();
+        }
+        save(); renderMe(); document.getElementById('scroll').scrollTop = 0; return;
+      }
       if (t.closest('#gohome')) { resetForm(); state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
       if (t.closest('#mkplan') || t.closest('#editplan')) { state.view = 'wiz'; state.ui.wstep = 1; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
       if ((meEl = t.closest('[data-openday]'))) {
@@ -1614,7 +1636,17 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   (function ptr() {
     var sc = document.getElementById('scroll'), box = document.getElementById('ptr'), cap = document.getElementById('ptrcap');
     var bar = document.getElementById('gbar'), aL = document.getElementById('garml'), aR = document.getElementById('garmr'), hL = document.getElementById('ghl'), hR = document.getElementById('ghr');
-    var TH = 84, MAXPULL = 130, FLOOR = 107, TOP = 18, y0 = null, pull = 0, busy = false;
+    var TH = 84, MAXPULL = 130, FLOOR = 107, TOP = 18, y0 = null, pull = 0, busy = false, shakeId = 0, lastShake = 0, buzzed = false;
+    var gor = document.getElementById('gor'), calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function tremor(ts) {
+      if (ts - lastShake > 33) {
+        var k = Math.min(1, pull / TH), amp = k * k * 2;
+        gor.style.transform = 'translate(' + ((Math.random() - .5) * 2 * amp).toFixed(2) + 'px,' + ((Math.random() - .5) * 1.2 * amp).toFixed(2) + 'px)';
+        lastShake = ts;
+      }
+      shakeId = requestAnimationFrame(tremor);
+    }
+    function stopTremor() { if (shakeId) cancelAnimationFrame(shakeId); shakeId = 0; gor.style.transform = ''; }
     function setPose(by, handY) {
       bar.setAttribute('transform', 'translate(0 ' + by.toFixed(1) + ')');
       var hy = handY === undefined ? by : handY, p = Math.max(0, Math.min(1, (FLOOR - by) / (FLOOR - TOP))), e = 4 + 12 * (1 - p), mid = (80 + hy) / 2;
@@ -1632,7 +1664,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
       })();
     }
     function release(refresh) {
-      busy = true; cap.textContent = refresh ? 'Aggiorno' : '';
+      stopTremor(); buzzed = false; busy = true; cap.textContent = refresh ? 'Aggiorno' : '';
       drop(byFor(Math.min(1, pull / TH)), function () {
         if (refresh) { setTimeout(forceUpdate, 150); return; }
         box.style.transition = 'height .22s ease'; box.style.height = '0px';
@@ -1644,13 +1676,15 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     sc.addEventListener('touchmove', function (e) {
       if (y0 === null) return;
       var dy = e.touches[0].clientY - y0;
-      if (dy <= 0 || sc.scrollTop > 0) { if (pull) { pull = 0; box.style.height = '0px'; setPose(FLOOR); } return; }
+      if (dy <= 0 || sc.scrollTop > 0) { if (pull) { pull = 0; box.style.height = '0px'; setPose(FLOOR); stopTremor(); } return; }
       if (e.cancelable) e.preventDefault();
       pull = Math.min(MAXPULL, dy * 0.55); box.style.height = pull + 'px';
+      if (!shakeId && !calm) shakeId = requestAnimationFrame(tremor);
+      if (pull >= TH && !buzzed) { buzzed = true; try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {} } else if (pull < TH) buzzed = false;
       setPose(byFor(Math.min(1, pull / TH)));
       cap.textContent = pull >= TH ? 'Rilascia' : 'Tira';
     }, { passive: false });
-    function end() { if (y0 === null) return; y0 = null; if (pull > 0) release(pull >= TH); }
+    function end() { if (y0 === null) return; y0 = null; stopTremor(); if (pull > 0) release(pull >= TH); }
     sc.addEventListener('touchend', end, { passive: true });
     sc.addEventListener('touchcancel', end, { passive: true });
   })();
