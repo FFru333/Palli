@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Swiss poster style: flat colour fields, hairline grid, huge numerals, black circles.
+   Setup screen is orange with black; the workout screen is warm grey with red. One visual world, light only. */
+:root {
+  --orange: #e45a38;
+  --red: #e33a1f;
+  --dred: #9b2915;
+  --beige: #d9d5c8;
+  --black: #0d0d0d;
+  --font: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color-scheme: light;
+}
+body.setup { --bg: var(--orange); --fg: var(--black); --sub: #2b0e06; --hair: rgba(13,13,13,.55); --accent: var(--black); --accent-ink: var(--orange); }
+body.plan  { --bg: var(--beige);  --fg: var(--black); --sub: #57534a; --hair: rgba(13,13,13,.28); --accent: var(--red);   --accent-ink: #ffffff; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 17px; line-height: 1.4; padding-bottom: 32px; }
+body.has-timer { padding-bottom: 104px; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 0; }
+header { padding-bottom: 8px; }
+header h1 { font-weight: 800; font-size: clamp(2.3rem, 10vw, 3.1rem); line-height: .95; letter-spacing: -.04em; margin: 0; text-wrap: balance; }
+header p { margin: 12px 0 0; color: var(--sub); font-size: 1rem; font-weight: 500; max-width: 38ch; }
+header p.note { font-weight: 700; color: var(--fg); }
+#app { display: flex; flex-direction: column; }
+.nojs { border-top: 1px solid var(--hair); padding: 18px 0; font-size: 1.05rem; }
+.nojs p { margin: 8px 0 0; max-width: 40ch; }
+.cap { font-size: .85rem; font-weight: 500; color: var(--sub); }
+
+/* hero circles (setup) */
+.hero { position: relative; width: min(100%, 330px); aspect-ratio: 1; margin: 18px auto 22px; }
+.hero-big { position: absolute; inset: 0; border-radius: 50%; background: var(--black); color: var(--orange); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.hero-big b { font-size: clamp(5rem, 28vw, 7.5rem); font-weight: 800; line-height: .85; letter-spacing: -.06em; }
+.hero-big span { font-weight: 500; font-size: 1rem; margin-top: 6px; }
+.hero-small { position: absolute; width: 31%; aspect-ratio: 1; left: 11%; bottom: 7%; border-radius: 50%; background: var(--orange); color: var(--black); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.hero-small b { font-size: 1.9rem; font-weight: 800; letter-spacing: -.04em; }
+.hero-small span { font-size: .8rem; font-weight: 600; margin-top: 2px; }
+
+/* setup */
+.panel { border-top: 1px solid var(--hair); padding: 16px 0 22px; display: flex; flex-direction: column; gap: 12px; }
+.panel h2 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.panel .hint { margin: -6px 0 0; color: var(--sub); font-size: .92rem; font-weight: 500; max-width: 44ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 44px; padding: 0 17px; border-radius: 99px; border: 2px solid var(--fg); background: transparent; font-weight: 700; white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.times { display: flex; flex-wrap: wrap; gap: 10px; }
+.tbtn { width: 62px; height: 62px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; font-size: 1.45rem; font-weight: 800; letter-spacing: -.04em; display: flex; align-items: center; justify-content: center; }
+.tbtn[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.cta-row { border-top: 1px solid var(--hair); padding: 18px 0 8px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.primary { width: 132px; height: 132px; border-radius: 50%; border: 0; background: var(--fg); color: var(--bg); font-size: 1.15rem; font-weight: 800; line-height: 1.1; letter-spacing: -.01em; flex: none; }
+.cta-side { flex: 1 1 160px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.err { margin: 0; font-weight: 700; font-size: .95rem; }
+.textbtn { background: none; border: 0; padding: 6px 0; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-align: left; }
+.presets { display: flex; flex-direction: column; }
+.preset { background: none; border: 0; border-top: 1px solid var(--hair); padding: 14px 0; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.preset:first-child { border-top: 0; padding-top: 4px; }
+.preset b { font-size: 1.15rem; font-weight: 800; letter-spacing: -.02em; display: block; }
+.preset .go { width: 44px; height: 44px; border-radius: 50%; background: var(--fg); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 800; flex: none; }
+
+/* workout */
+.row-links { display: flex; gap: 18px; padding: 6px 0 0; }
+.stat { border-top: 1px solid var(--hair); margin-top: 14px; padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.ring { width: min(100%, 250px); aspect-ratio: 1; align-self: center; display: block; }
+.ring circle { fill: none; stroke-width: 62; }
+.ring .track { stroke: var(--dred); }
+.ring .fill { stroke: var(--red); stroke-linecap: butt; transition: stroke-dasharray .35s ease; }
+.stat-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-bottom: 1px solid var(--hair); padding-bottom: 8px; }
+.stat-row .num { display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+.stat-row .num b { font-size: 4.2rem; font-weight: 800; line-height: .85; letter-spacing: -.06em; }
+.stat-row .num i { font-style: normal; font-size: 1.2rem; font-weight: 500; color: var(--sub); }
+.blocks { display: flex; flex-direction: column; }
+.block { border-top: 1px solid var(--hair); padding: 14px 0 6px; }
+.block-h { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding-bottom: 6px; }
+.block-h h2 { margin: 0; font-size: 1.45rem; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.block-h .cap { display: block; margin-top: 6px; }
+.big-n { display: flex; align-items: baseline; gap: 6px; }
+.big-n b { font-size: 3.2rem; font-weight: 800; line-height: .85; letter-spacing: -.06em; }
+.big-n span { font-size: .85rem; font-weight: 500; color: var(--sub); }
+.ex { padding: 16px 0; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--hair); }
+.ex-top { display: flex; gap: 12px; align-items: flex-start; }
+.tag { flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--fg); color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: .85rem; letter-spacing: -.02em; }
+.ex-name { font-weight: 700; font-size: 1.2rem; line-height: 1.15; letter-spacing: -.02em; }
+.ex-meta { color: var(--sub); font-size: .88rem; font-weight: 500; margin-top: 3px; }
+.ex.complete .tag { background: var(--red); color: #fff; }
+.sets { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.set { width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; font-size: 1.35rem; font-weight: 800; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.set[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+.mini { width: 54px; height: 54px; border-radius: 50%; border: 2px dashed var(--fg); background: transparent; font-size: 1.5rem; font-weight: 500; line-height: 1; }
+.kg { display: flex; align-items: flex-end; gap: 6px; margin-left: auto; }
+.kg span { font-size: .85rem; font-weight: 500; color: var(--sub); padding-bottom: 6px; }
+.kg input { width: 86px; height: 48px; border: 0; border-bottom: 2px solid var(--fg); background: transparent; border-radius: 0; text-align: right; font-size: 1.7rem; font-weight: 800; letter-spacing: -.04em; padding: 0 2px; font-variant-numeric: tabular-nums; }
+.kg input::placeholder { color: var(--sub); opacity: .55; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tools select { flex: 1 1 200px; min-width: 0; height: 44px; border-radius: 99px; border: 2px solid var(--fg); background: transparent; padding: 0 14px; font-weight: 600; font-size: .95rem; }
+.tools button { height: 44px; padding: 0 18px; border-radius: 99px; border: 2px solid var(--fg); background: transparent; font-weight: 700; font-size: .95rem; }
+.tools button[aria-expanded="true"] { background: var(--fg); color: var(--bg); }
+.info { font-size: .95rem; background: rgba(13,13,13,.08); border-radius: 14px; padding: 12px 14px; display: grid; gap: 4px; margin: 0; }
+.info[hidden] { display: none; }
+.info dt { font-weight: 800; display: inline; }
+.info dd { display: inline; margin: 0; }
+.rest-note { padding: 8px 0 10px; border-top: 1px solid var(--hair); }
+
+.timer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--black); color: var(--beige); padding: 10px 20px calc(10px + env(safe-area-inset-bottom)); z-index: 5; }
+.timer[hidden] { display: none; }
+.timer-in { max-width: 560px; margin: 0 auto; display: flex; align-items: center; gap: 8px; }
+.timer .lab { font-size: .75rem; font-weight: 500; opacity: .8; }
+.timer .time { font-size: 2.3rem; font-weight: 800; letter-spacing: -.05em; min-width: 82px; font-variant-numeric: tabular-nums; line-height: 1; }
+.timer .time.end { color: #ff8a6b; }
+.timer button { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--beige); background: transparent; color: var(--beige); font-weight: 800; font-size: 1rem; letter-spacing: -.02em; padding: 0; }
+.timer .stop { margin-left: auto; background: var(--red); border-color: var(--red); color: #fff; font-size: .8rem; }
+footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22px; border-top: 1px solid var(--hair); margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { .ring .fill { transition: none; } }
+</style>
+</head>
+<body class="setup">
+<div class="wrap">
+  <header>
+    <h1 id="h1">Scheda superserie</h1>
+    <p id="sub"></p>
+  </header>
+  <div id="app"><div class="nojs"><b>Questa anteprima non esegue gli script.</b><p>La scheda funziona solo aprendo il file in un browser: salva il file, poi aprilo con Safari o Chrome. Se è online, apri il link nel browser invece che nell'anteprima di un'app di messaggi o di file.</p></div></div>
+  <footer>Le spunte e i carichi restano salvati solo su questo browser, per chi apre la pagina.</footer>
+</div>
+
+<div class="timer" id="timerbar" role="region" aria-label="Timer di recupero" hidden>
+  <div class="timer-in">
+    <div><div class="lab">Recupero</div><div class="time" id="time">0:00</div></div>
+    <button type="button" data-t="60" aria-label="Recupero 60 secondi">60</button>
+    <button type="button" data-t="75" aria-label="Recupero 75 secondi">75</button>
+    <button type="button" data-t="90" aria-label="Recupero 90 secondi">90</button>
+    <button type="button" class="stop" id="stop" aria-label="Ferma il timer">Stop</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var SESSIONS = [
+    {
+      id: 's1', tab: 'Seduta 1', sub: 'Petto, bicipiti, gambe',
+      blocks: [
+        { label: 'Superserie 1', note: 'A1, A2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60-75 s dopo A2', items: [
+          { id: 's1a1', tag: 'A1', reps: '8-12', muscle: 'Petto',
+            opts: [
+              { n: 'Panca piana con manubri', t: 'Scapole indietro e giù, gomiti a circa 45° dal busto, scendi finché i manubri sono all\'altezza del petto.' },
+              { n: 'Panca piana con bilanciere', t: 'Presa poco più larga delle spalle, tocca il petto senza rimbalzare. Meglio con un compagno o i fermi.' },
+              { n: 'Chest press (macchina)', t: 'Regola il sedile così le maniglie partono a metà petto. Buona se sei stanco o vai a cedimento.' },
+              { n: 'Piegamenti zavorrati', t: 'Corpo in linea, petto a terra. Aggiungi zaino o disco sulla schiena quando 12 sono facili.' }
+            ] },
+          { id: 's1a2', tag: 'A2', reps: '6-10', muscle: 'Bicipiti e dorsali',
+            opts: [
+              { n: 'Trazioni a presa supina', t: 'Presa alla larghezza delle spalle, mento sopra la sbarra. Lavorano anche i dorsali, quindi pesano sulla seduta 2.' },
+              { n: 'Curl con bilanciere EZ', t: 'Gomiti fermi ai fianchi, niente slancio con la schiena.' },
+              { n: 'Curl al cavo basso', t: 'Tensione costante anche in basso. Buono per le ultime serie.' },
+              { n: 'Trazioni assistite supine', t: 'Se non arrivi alle 6 ripetizioni: macchina assistita o elastico.' }
+            ] }
+        ] },
+        { label: 'Superserie 2', note: 'B1, B2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60-75 s dopo B2', items: [
+          { id: 's1b1', tag: 'B1', reps: '8-12', muscle: 'Petto alto',
+            opts: [
+              { n: 'Panca inclinata con manubri', t: 'Panca a 30°. Oltre i 45° lavora più la spalla che il petto.' },
+              { n: 'Chest press inclinata (macchina)', t: 'Stessa angolazione, più stabile.' },
+              { n: 'Piegamenti con piedi rialzati', t: 'Piedi su una panca, stessa linea del corpo.' },
+              { n: 'Inclinata al multipower', t: 'Percorso guidato, utile per carichi alti da solo.' }
+            ] },
+          { id: 's1b2', tag: 'B2', reps: '8-12', muscle: 'Bicipiti',
+            opts: [
+              { n: 'Curl con manubri alternato', t: 'Ruota il polso verso l\'alto durante la salita, scendi in 2 secondi.' },
+              { n: 'Curl su panca inclinata', t: 'Braccia dietro al busto: allunga il capo lungo del bicipite.' },
+              { n: 'Curl Scott', t: 'Impedisce di barare con la schiena, usa meno carico.' },
+              { n: 'Curl ai cavi con barra', t: 'Come l\'EZ ma con tensione costante.' }
+            ] }
+        ] },
+        { label: 'Superserie 3', note: 'C1, C2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60 s dopo C2', items: [
+          { id: 's1c1', tag: 'C1', reps: '10-15', muscle: 'Petto',
+            opts: [
+              { n: 'Croci ai cavi', t: 'Gomiti leggermente flessi, porta le mani davanti allo sterno e stringi un secondo.' },
+              { n: 'Pec deck', t: 'Spalle basse, non lasciare che i gomiti vadano dietro la linea del busto.' },
+              { n: 'Croci con manubri su panca', t: 'Scendi fin dove senti allungare il petto, non oltre.' },
+              { n: 'Dip alle parallele (busto in avanti)', t: 'Inclinati in avanti per spostare il lavoro sul petto.' }
+            ] },
+          { id: 's1c2', tag: 'C2', reps: '10-12', muscle: 'Bicipiti e brachiale',
+            opts: [
+              { n: 'Curl a martello', t: 'Presa neutra, polsi dritti. Lavora brachiale e brachioradiale.' },
+              { n: 'Curl alla corda (cavo)', t: 'Presa a martello al cavo, tensione costante.' },
+              { n: 'Curl concentrato', t: 'Gomito appoggiato all\'interno coscia, ripetizioni lente.' },
+              { n: 'Curl 21', t: 'Tre mezzi range da 7 ripetizioni con il bilanciere EZ, leggero.' }
+            ] }
+        ] },
+        { label: 'Gambe', note: 'Serie normali, non in superserie', kind: 'single', rest: 'Recupero 90 s tra le serie', items: [
+          { id: 's1g1', tag: 'G1', reps: '8-12', muscle: 'Quadricipiti, glutei',
+            opts: [
+              { n: 'Pressa', t: 'Piedi a metà piattaforma, ginocchia in linea con le punte, non bloccare in alto.' },
+              { n: 'Squat con bilanciere', t: 'Più completo ma più impegnativo dopo petto e bicipiti: scendi di carico.' },
+              { n: 'Hack squat', t: 'Schiena appoggiata, percorso guidato.' },
+              { n: 'Leg extension', t: 'Isola i quadricipiti, pausa di un secondo in alto.' }
+            ] },
+          { id: 's1g2', tag: 'G2', reps: '12-15', muscle: 'Polpacci',
+            opts: [
+              { n: 'Polpacci in piedi (macchina)', t: 'Scendi fino in fondo, pausa in alto e in basso.' },
+              { n: 'Polpacci alla pressa', t: 'Solo punta del piede sulla piattaforma, ginocchia quasi distese.' },
+              { n: 'Polpacci a una gamba con peso', t: 'Su un gradino con manubrio, ti tieni con l\'altra mano.' },
+              { n: 'Polpacci da seduto', t: 'Lavora di più il soleo, ginocchia a 90°.' }
+            ] }
+        ] },
+        { label: 'Extra (se avanza tempo)', note: 'Opzionale', kind: 'single', rest: 'Recupero 45-60 s', items: [
+          { id: 's1x1', tag: 'X', reps: '12-15', muscle: 'Spalle (deltoidi laterali)',
+            opts: [
+              { n: 'Alzate laterali', t: 'Gomiti leggermente flessi, sali fino all\'altezza della spalla, niente slancio.' },
+              { n: 'Alzate laterali ai cavi', t: 'Tensione continua anche in basso.' },
+              { n: 'Abduttori (macchina)', t: 'Per glutei esterni, non per le spalle.' },
+              { n: 'Adduttori (macchina)', t: 'Interno coscia.' }
+            ] }
+        ] }
+      ]
+    },
+    {
+      id: 's2', tab: 'Seduta 2', sub: 'Schiena, tricipiti, gambe',
+      blocks: [
+        { label: 'Superserie 1', note: 'A1, A2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60-75 s dopo A2', items: [
+          { id: 's2a1', tag: 'A1', reps: '6-10', muscle: 'Dorsali',
+            opts: [
+              { n: 'Trazioni', t: 'Presa poco più larga delle spalle, petto verso la sbarra, scendi controllato.' },
+              { n: 'Lat machine presa larga', t: 'Tira verso la parte alta del petto, non dietro la nuca.' },
+              { n: 'Trazioni assistite', t: 'Macchina assistita o elastico.' },
+              { n: 'Pulldown presa neutra', t: 'Maniglia a V, gomiti vicini al corpo.' }
+            ] },
+          { id: 's2a2', tag: 'A2', reps: '8-12', muscle: 'Tricipiti',
+            opts: [
+              { n: 'Pushdown con barra a V', t: 'Gomiti fermi ai fianchi, estendi del tutto e stringi un secondo.' },
+              { n: 'Pushdown con barra dritta', t: 'Più carico, meno rotazione del polso.' },
+              { n: 'Dip alle parallele (busto dritto)', t: 'Gomiti vicini, scendi finché le braccia sono a 90°.' },
+              { n: 'Panca presa stretta', t: 'Mani poco più strette delle spalle, gomiti vicini.' }
+            ] }
+        ] },
+        { label: 'Superserie 2', note: 'B1, B2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60-75 s dopo B2', items: [
+          { id: 's2b1', tag: 'B1', reps: '8-12', muscle: 'Dorsali',
+            opts: [
+              { n: 'Lat machine', t: 'Busto leggermente inclinato indietro, tira con i gomiti, non con le mani.' },
+              { n: 'Lat machine presa a V', t: 'Più lavoro sul dorsale in basso.' },
+              { n: 'Pulldown a un braccio al cavo', t: 'Maggiore escursione, un lato alla volta.' },
+              { n: 'Pullover al cavo', t: 'Braccia quasi tese, tira giù con il dorsale.' }
+            ] },
+          { id: 's2b2', tag: 'B2', reps: '10-12', muscle: 'Tricipiti',
+            opts: [
+              { n: 'Pushdown con corda', t: 'Alla fine allarga la corda per un\'estensione più completa.' },
+              { n: 'Estensioni sopra la testa al cavo', t: 'Allunga il capo lungo, il più completo per il volume.' },
+              { n: 'French press con manubrio', t: 'Gomiti puntati in alto, scendi dietro la testa.' },
+              { n: 'Kickback al cavo', t: 'Busto in avanti, carico basso.' }
+            ] }
+        ] },
+        { label: 'Superserie 3', note: 'C1, C2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60 s dopo C2', items: [
+          { id: 's2c1', tag: 'C1', reps: '10-12 per lato', muscle: 'Dorsali, romboidi',
+            opts: [
+              { n: 'Rematore a un braccio su panca', t: 'Schiena piatta, porta il gomito verso l\'anca.' },
+              { n: 'Rematore con manubri a busto appoggiato', t: 'Petto sulla panca inclinata, meno carico sulla zona lombare.' },
+              { n: 'Rematore al cavo basso', t: 'Busto fermo, tira verso l\'ombelico.' },
+              { n: 'Rematore alla macchina', t: 'Appoggio al petto, carico stabile.' }
+            ] },
+          { id: 's2c2', tag: 'C2', reps: '10-12 per lato', muscle: 'Tricipiti',
+            opts: [
+              { n: 'Pushdown a un braccio con maniglia', t: 'Corpo fermo, estendi del tutto.' },
+              { n: 'Estensione sopra la testa a un braccio', t: 'Gomito vicino alla testa, scendi lento.' },
+              { n: 'Kickback con manubrio', t: 'Braccio parallelo al pavimento, stringi in alto.' },
+              { n: 'French press alla panca', t: 'Con bilanciere EZ, gomiti fermi.' }
+            ] }
+        ] },
+        { label: 'Gambe', note: 'Serie normali, non in superserie', kind: 'single', rest: 'Recupero 90 s tra le serie', items: [
+          { id: 's2g1', tag: 'G1', reps: '10-12', muscle: 'Femorali',
+            opts: [
+              { n: 'Leg curl (macchina)', t: 'Anca appoggiata, non staccarla, scendi lento.' },
+              { n: 'Leg curl in piedi', t: 'Una gamba alla volta.' },
+              { n: 'Stacco rumeno leggero', t: 'Schiena neutra, spingi i fianchi indietro. Tieni il carico basso dopo i rematori.' },
+              { n: 'Leg curl da seduto', t: 'Cosce bloccate dal rullo.' }
+            ] },
+          { id: 's2g2', tag: 'G2', reps: '8-12', muscle: 'Glutei',
+            opts: [
+              { n: 'Hip thrust', t: 'Schiena alta su una panca, spingi fino a bacino esteso, pausa un secondo.' },
+              { n: 'Glute kickback al cavo', t: 'Gamba tesa all\'indietro, senza inarcare la zona lombare.' },
+              { n: 'Abduttori (macchina)', t: 'Apri le gambe con controllo.' },
+              { n: 'Ponte glutei con bilanciere', t: 'Versione da terra dell\'hip thrust, meno escursione.' }
+            ] }
+        ] },
+        { label: 'Extra (se avanza tempo)', note: 'Opzionale', kind: 'single', rest: 'Recupero 45-60 s', items: [
+          { id: 's2x1', tag: 'X', reps: '12-15', muscle: 'Spalle (deltoidi posteriori)',
+            opts: [
+              { n: 'Face pull', t: 'Corda all\'altezza del viso, tira verso la fronte aprendo i gomiti.' },
+              { n: 'Alzate posteriori con manubri', t: 'Busto in avanti, gomiti leggermente flessi.' },
+              { n: 'Reverse pec deck', t: 'Maniglie alte, apri senza spingere con le spalle.' },
+              { n: 'Alzate laterali', t: 'Per il deltoide laterale.' }
+            ] }
+        ] }
+      ]
+    }
+  ];
+
+  // ---------- Banca esercizi per generare la scheda ----------
+  var GROUPS = [
+    { id: 'petto', n: 'Petto' }, { id: 'schiena', n: 'Schiena' }, { id: 'spalle', n: 'Spalle' },
+    { id: 'bicipiti', n: 'Bicipiti' }, { id: 'tricipiti', n: 'Tricipiti' },
+    { id: 'quadricipiti', n: 'Quadricipiti' }, { id: 'femorali', n: 'Femorali' },
+    { id: 'glutei', n: 'Glutei' }, { id: 'polpacci', n: 'Polpacci' }, { id: 'addome', n: 'Addome' }
+  ];
+  // tag: g = serve la palestra, m = bastano i manubri, c = corpo libero
+  function o(n, t, tag) { return { n: n, t: t, tag: tag }; }
+  var BANK = {
+    petto: [
+      { big: true, opts: [
+        o('Panca piana con manubri', 'Scapole indietro e in basso, gomiti a circa 45° dal busto, scendi finché i manubri sono all\'altezza del petto.', 'm'),
+        o('Panca piana con bilanciere', 'Presa poco più larga delle spalle, tocca il petto senza rimbalzare. Usa i fermi o un compagno.', 'g'),
+        o('Chest press (macchina)', 'Regola il sedile così le maniglie partono a metà petto.', 'g'),
+        o('Piegamenti', 'Corpo in linea, petto quasi a terra. Appoggia le ginocchia se non arrivi alle ripetizioni.', 'c') ] },
+      { big: true, opts: [
+        o('Panca inclinata con manubri', 'Panca a 30°. Oltre i 45° lavora più la spalla che il petto.', 'm'),
+        o('Chest press inclinata (macchina)', 'Stessa angolazione, più stabile.', 'g'),
+        o('Piegamenti con piedi rialzati', 'Piedi su una panca o una sedia, stessa linea del corpo.', 'c') ] },
+      { big: false, opts: [
+        o('Croci ai cavi', 'Gomiti leggermente flessi, porta le mani davanti allo sterno e stringi un secondo.', 'g'),
+        o('Pec deck', 'Spalle basse, i gomiti non vanno oltre la linea del busto.', 'g'),
+        o('Croci con manubri su panca', 'Scendi fin dove senti allungare il petto, non oltre.', 'm'),
+        o('Piegamenti a mani larghe', 'Mani più larghe delle spalle, scendi lenta e controllata.', 'c') ] }
+    ],
+    schiena: [
+      { big: true, opts: [
+        o('Trazioni alla sbarra', 'Presa poco più larga delle spalle, petto verso la sbarra, scendi controllato. Se non arrivi, usa la macchina assistita.', 'g'),
+        o('Lat machine', 'Busto leggermente indietro, tira con i gomiti verso la parte alta del petto.', 'g'),
+        o('Rematore con manubri a busto inclinato', 'Schiena piatta, porta i manubri verso l\'anca.', 'm'),
+        o('Rematore inverso sotto un tavolo robusto', 'Corpo in linea, tira il petto verso il bordo. Verifica che il tavolo regga.', 'c') ] },
+      { big: true, opts: [
+        o('Rematore a un braccio con manubrio', 'Mano e ginocchio su una panca, schiena piatta, gomito verso l\'anca.', 'm'),
+        o('Rematore al cavo basso', 'Busto fermo, tira verso l\'ombelico e stringi le scapole.', 'g'),
+        o('Rematore alla macchina', 'Appoggio al petto, carico stabile.', 'g'),
+        o('Rematore con zaino carico', 'Busto inclinato in avanti, zaino con libri o bottiglie, tira verso l\'ombelico.', 'c') ] },
+      { big: false, opts: [
+        o('Pulldown a braccia tese al cavo', 'Braccia quasi tese, tira giù con il dorsale senza piegare i gomiti.', 'g'),
+        o('Pullover con manubrio', 'Sdraiato su una panca, porta il manubrio dietro la testa e richiamalo con il dorsale.', 'm'),
+        o('Superman con pausa', 'A pancia in giù, solleva braccia e gambe e tieni 2 secondi.', 'c') ] }
+    ],
+    spalle: [
+      { big: true, opts: [
+        o('Military press con manubri', 'Da seduto o in piedi, spingi sopra la testa senza inarcare la schiena.', 'm'),
+        o('Shoulder press (macchina)', 'Schiena appoggiata, spingi fino a gomiti quasi distesi.', 'g'),
+        o('Pike push-up', 'A V rovesciata, la testa scende tra le mani.', 'c') ] },
+      { big: false, opts: [
+        o('Alzate laterali', 'Gomiti leggermente flessi, sali fino all\'altezza delle spalle, niente slancio.', 'm'),
+        o('Alzate laterali ai cavi', 'Tensione continua anche in basso.', 'g'),
+        o('Alzate laterali con bottiglie d\'acqua', 'Stesso movimento, carico basso, ripetizioni lente.', 'c') ] },
+      { big: false, opts: [
+        o('Alzate posteriori con manubri', 'Busto in avanti, gomiti leggermente flessi, apri le braccia.', 'm'),
+        o('Face pull', 'Corda all\'altezza del viso, tira verso la fronte aprendo i gomiti.', 'g'),
+        o('Reverse pec deck', 'Maniglie alte, apri senza spingere con le spalle.', 'g'),
+        o('Superman con braccia a T', 'A pancia in giù, braccia aperte a T, solleva e stringi le scapole.', 'c') ] }
+    ],
+    bicipiti: [
+      { big: false, opts: [
+        o('Curl con manubri alternato', 'Ruota il polso verso l\'alto durante la salita, scendi in 2 secondi.', 'm'),
+        o('Curl con bilanciere EZ', 'Gomiti fermi ai fianchi, niente slancio con la schiena.', 'g'),
+        o('Curl al cavo basso', 'Tensione costante anche in basso.', 'g'),
+        o('Curl con asciugamano', 'Asciugamano sotto un piede, tira con la mano opposta resistendo con la gamba.', 'c') ] },
+      { big: false, opts: [
+        o('Curl a martello', 'Presa neutra, polsi dritti. Lavora brachiale e brachioradiale.', 'm'),
+        o('Curl alla corda (cavo)', 'Presa a martello al cavo, tensione costante.', 'g'),
+        o('Curl concentrato', 'Gomito appoggiato all\'interno coscia, ripetizioni lente.', 'm'),
+        o('Curl con zaino carico', 'Tieni lo zaino per le maniglie e piega i gomiti.', 'c') ] }
+    ],
+    tricipiti: [
+      { big: false, opts: [
+        o('Pushdown ai cavi (barra a V)', 'Gomiti fermi ai fianchi, estendi del tutto e stringi un secondo.', 'g'),
+        o('French press con manubrio', 'Gomiti puntati in alto, scendi dietro la testa.', 'm'),
+        o('Dip su panca', 'Mani sulla panca dietro di te, scendi finché i gomiti sono a 90°.', 'c') ] },
+      { big: false, opts: [
+        o('Estensioni sopra la testa con manubrio', 'Gomiti vicini alla testa, scendi lento.', 'm'),
+        o('Estensioni sopra la testa al cavo', 'Allunga il capo lungo del tricipite.', 'g'),
+        o('Piegamenti a mani strette', 'Mani sotto lo sterno, gomiti vicini al corpo.', 'c') ] }
+    ],
+    quadricipiti: [
+      { big: true, opts: [
+        o('Squat con bilanciere', 'Piedi poco più larghi delle spalle, schiena neutra, scendi almeno a parallela.', 'g'),
+        o('Pressa', 'Piedi a metà piattaforma, ginocchia in linea con le punte, non bloccare in alto.', 'g'),
+        o('Goblet squat con manubrio', 'Manubrio al petto, gomiti dentro le ginocchia in basso.', 'm'),
+        o('Squat a corpo libero', 'Scendi lento in 3 secondi, risali deciso.', 'c') ] },
+      { big: true, opts: [
+        o('Affondi con manubri', 'Passo lungo, ginocchio anteriore sopra la caviglia.', 'm'),
+        o('Hack squat', 'Schiena appoggiata, percorso guidato.', 'g'),
+        o('Affondi a corpo libero', 'Passo lungo, scendi finché il ginocchio dietro sfiora il pavimento.', 'c') ] },
+      { big: false, opts: [
+        o('Leg extension', 'Pausa di un secondo in alto, scendi lento.', 'g'),
+        o('Step-up su panca con manubri', 'Sali spingendo con la gamba sulla panca, non con quella a terra.', 'm'),
+        o('Sedia al muro', 'Schiena al muro, cosce parallele, tieni 30-45 secondi.', 'c') ] }
+    ],
+    femorali: [
+      { big: true, opts: [
+        o('Stacco rumeno con bilanciere', 'Schiena neutra, spingi i fianchi indietro, barra vicina alle gambe.', 'g'),
+        o('Stacco rumeno con manubri', 'Stessa tecnica, ginocchia appena flesse.', 'm'),
+        o('Stacco rumeno a una gamba senza peso', 'Appoggiati a un muro se perdi equilibrio.', 'c') ] },
+      { big: false, opts: [
+        o('Leg curl (macchina)', 'Anca appoggiata, non staccarla, scendi lento.', 'g'),
+        o('Leg curl con asciugamano sul pavimento', 'Sdraiato con i talloni su un asciugamano, scivola e richiama.', 'c') ] }
+    ],
+    glutei: [
+      { big: true, opts: [
+        o('Hip thrust', 'Schiena alta su una panca, spingi fino al bacino esteso, pausa un secondo.', 'g'),
+        o('Hip thrust con manubrio', 'Manubrio sul bacino, stessa tecnica.', 'm'),
+        o('Ponte glutei', 'A terra, spingi con i talloni, stringi i glutei in alto.', 'c') ] },
+      { big: false, opts: [
+        o('Glute kickback al cavo', 'Gamba tesa all\'indietro, senza inarcare la zona lombare.', 'g'),
+        o('Abduttori (macchina)', 'Apri le gambe con controllo.', 'g'),
+        o('Donkey kick', 'A quattro zampe, spingi il tallone verso il soffitto.', 'c') ] }
+    ],
+    polpacci: [
+      { big: false, opts: [
+        o('Polpacci in piedi (macchina)', 'Scendi fino in fondo, pausa in alto e in basso.', 'g'),
+        o('Polpacci con manubri su un gradino', 'Punta sul gradino, talloni fuori, tieniti con una mano.', 'm'),
+        o('Polpacci a una gamba su un gradino', 'Tieniti con una mano, scendi fino in fondo.', 'c') ] }
+    ],
+    addome: [
+      { big: false, opts: [
+        o('Crunch al cavo', 'Inginocchiato, arrotola il busto verso le ginocchia.', 'g'),
+        o('Russian twist con manubrio', 'Piedi sollevati, ruota il busto da un lato all\'altro.', 'm'),
+        o('Plank', 'Tieni 30-60 secondi, bacino in linea con le spalle.', 'c') ] },
+      { big: false, opts: [
+        o('Sollevamento gambe da sdraiato', 'Lombare appoggiata, scendi lento senza toccare terra.', 'c'),
+        o('Dead bug', 'Braccio e gamba opposti si allungano, lombare sempre a terra.', 'c') ] }
+    ]
+  };
+  // Con quali gruppi conviene abbinare un esercizio in superserie (ordine di preferenza).
+  var PREF = {
+    petto: ['schiena', 'bicipiti', 'addome', 'polpacci'],
+    schiena: ['petto', 'tricipiti', 'addome', 'polpacci'],
+    spalle: ['quadricipiti', 'femorali', 'glutei', 'polpacci', 'addome'],
+    bicipiti: ['tricipiti', 'petto', 'polpacci', 'addome'],
+    tricipiti: ['bicipiti', 'schiena', 'polpacci', 'addome'],
+    quadricipiti: ['femorali', 'spalle', 'bicipiti', 'addome'],
+    femorali: ['quadricipiti', 'spalle', 'tricipiti', 'petto', 'addome'],
+    glutei: ['spalle', 'quadricipiti', 'bicipiti', 'petto'],
+    polpacci: ['petto', 'schiena', 'spalle', 'bicipiti', 'tricipiti'],
+    addome: ['petto', 'schiena', 'spalle', 'glutei', 'quadricipiti', 'femorali']
+  };
+  var TIMES = [30, 45, 60, 75, 90];
+  var STYLES = { ss: 'Superserie', sn: 'Serie normali' };
+  var EQUIP = { g: 'Palestra completa', m: 'Solo manubri', c: 'Corpo libero' };
+  var LEVELS = { p: 'Principiante', i: 'Intermedio', a: 'Avanzato' };
+
+  function gname(id) { for (var i = 0; i < GROUPS.length; i++) if (GROUPS[i].id === id) return GROUPS[i].n; return id; }
+  function optOk(opt, eq) { return eq === 'g' || (eq === 'm' && (opt.tag === 'm' || opt.tag === 'c')) || (eq === 'c' && opt.tag === 'c'); }
+  function slotsFor(g, eq) {
+    var out = [];
+    (BANK[g] || []).forEach(function (s) {
+      var opts = s.opts.filter(function (x) { return optOk(x, eq); });
+      if (opts.length) out.push({ big: s.big, opts: opts });
+    });
+    return out;
+  }
+
+  var PROFILES = {
+    muscolo: { n: 'Crescita muscolare', d: 'Superserie, 8-12 ripetizioni, recuperi di circa un minuto.', style: null, restSS: 70, restBig: 90, restIso: 60, cardio: 0, groups: ['petto', 'schiena', 'spalle', 'quadricipiti'], note: '' },
+    forza: { n: 'Forza', d: 'Serie normali con poche ripetizioni pesanti e recuperi lunghi.', style: 'sn', big: '4-6', iso: '8-10', restSS: 90, restBig: 150, restIso: 90, cardio: 0, groups: ['petto', 'schiena', 'quadricipiti', 'femorali'], note: 'Carichi alti: scalda bene e fermati prima che la tecnica ceda.' },
+    dimagrimento: { n: 'Dimagrimento', d: 'Superserie con recuperi brevi e 10 minuti di cardio finale.', style: 'ss', big: '12-15', iso: '12-15', restSS: 40, restBig: 45, restIso: 45, cardio: 10, groups: ['quadricipiti', 'glutei', 'petto', 'schiena'], note: 'Il dimagrimento dipende soprattutto dall\'alimentazione: l\'allenamento aiuta a mantenere la massa muscolare e a consumare energia.' },
+    resistenza: { n: 'Cardio e resistenza', d: 'Superserie leggere, molte ripetizioni, recuperi corti e 15 minuti di cardio.', style: 'ss', big: '15-20', iso: '15-20', restSS: 30, restBig: 30, restIso: 30, cardio: 15, groups: ['quadricipiti', 'petto', 'schiena', 'addome'], note: '' },
+    recupero: { n: 'Recupero attivo', d: 'Seduta leggera: 2 serie, carichi bassi, movimento fluido.', style: 'ss', big: '12-15', iso: '12-15', sets: 2, restSS: 30, restBig: 30, restIso: 30, cardio: 0, groups: ['schiena', 'glutei', 'spalle', 'addome'], note: 'Il movimento leggero favorisce circolazione e recupero. Le scorie le smaltiscono fegato e reni, non l\'allenamento.' }
+  };
+  var EMPH = { bal: 'Equilibrata', up: 'Parte alta', low: 'Gambe e glutei' };
+  var UPPER = ['petto', 'schiena', 'spalle', 'bicipiti', 'tricipiti'];
+  var LOWER = ['quadricipiti', 'femorali', 'glutei', 'polpacci'];
+  var CARDIO_OPTS = [
+    o('Tapis roulant: camminata veloce o corsa leggera', 'Ritmo a cui riesci a parlare a frasi corte.', 'g'),
+    o('Cyclette o bici', 'Resistenza media, cadenza costante.', 'g'),
+    o('Vogatore', 'Spingi con le gambe prima di tirare con le braccia.', 'g'),
+    o('Corda per saltare', 'Salti bassi, polsi che girano la corda.', 'c'),
+    o('Camminata veloce o corsa all\'aperto', 'Ritmo costante, a cui riesci a parlare a frasi corte.', 'c'),
+    o('Jumping jack e skip sul posto', 'Intervalli da 30 secondi con 30 di pausa.', 'c')
+  ];
+
+  function generate(f) {
+    var prof = PROFILES[f.profile] || null;
+    var sel = f.groups.length ? f.groups : (prof ? prof.groups : []);
+    var sets = (prof && prof.sets) || ({ p: 2, i: 3, a: 4 }[f.level] || 3);
+    var repsBig = (prof && prof.big) || ({ p: '12-15', i: '8-12', a: '6-10' }[f.level] || '8-12');
+    var repsIso = (prof && prof.iso) || ({ p: '12-15', i: '10-15', a: '10-15' }[f.level] || '10-15');
+    var style = (prof && prof.style) || f.style;
+    var sup = style === 'ss';
+    var restSS = prof ? prof.restSS : 70, restBig = prof ? prof.restBig : 90, restIso = prof ? prof.restIso : 60;
+    var cardio = prof ? prof.cardio : 0;
+    var unit = sup ? sets * (0.75 + restSS / 120) : sets * (0.75 + (restBig + restIso) / 120);
+    var avail = f.time - 5 - cardio;
+
+    var skipped = [], gs = [], per = [];
+    sel.forEach(function (g) {
+      var s = slotsFor(g, f.eq);
+      if (s.length) { gs.push(g); per.push(s); } else skipped.push(gname(g));
+    });
+    if (!gs.length) return { error: 'Con questa attrezzatura non ho esercizi per i gruppi scelti. Prova con un\'altra attrezzatura.' };
+
+    var picked = [];
+    gs.forEach(function (g, i) { picked.push({ g: g, slot: per[i][0] }); });
+    var emphSet = f.emph === 'up' ? UPPER : (f.emph === 'low' ? LOWER : []);
+    var order = gs.map(function (g, i) { return i; }).sort(function (x, y) {
+      return (emphSet.indexOf(gs[y]) >= 0 ? 1 : 0) - (emphSet.indexOf(gs[x]) >= 0 ? 1 : 0);
+    });
+    var stop = false;
+    for (var r = 1; r < 3 && !stop; r++) {
+      for (var oi = 0; oi < order.length && !stop; oi++) {
+        var gi = order[oi];
+        if (!per[gi][r]) continue;
+        if (picked.length >= 12 || (picked.length + 1) * unit > avail) { stop = true; break; }
+        picked.push({ g: gs[gi], slot: per[gi][r] });
+      }
+    }
+    picked.sort(function (a, b) { return (b.slot.big ? 1 : 0) - (a.slot.big ? 1 : 0); });
+
+    var blocksRaw = [];
+    if (sup) {
+      var used = [];
+      picked.forEach(function (a, i) {
+        if (used[i]) return; used[i] = true;
+        var partner = -1, prefs = PREF[a.g] || [];
+        for (var p = 0; p < prefs.length && partner < 0; p++) {
+          for (var j = i + 1; j < picked.length; j++) { if (!used[j] && picked[j].g === prefs[p]) { partner = j; break; } }
+        }
+        if (partner >= 0) { used[partner] = true; blocksRaw.push([a, picked[partner]]); } else blocksRaw.push([a]);
+      });
+    } else {
+      picked.forEach(function (a) { blocksRaw.push([a]); });
+    }
+
+    var stamp = 'g' + Date.now().toString(36), k = 0, ssN = 0, minutes = 5 + cardio, letters = 'ABCDEFGHIJKL';
+    var blocks = blocksRaw.map(function (items, bi) {
+      var isSS = items.length === 2;
+      if (isSS) ssN++;
+      var lastTag = letters[bi] + items.length;
+      var big = items.some(function (x) { return x.slot.big; });
+      var restS = big ? restBig : restIso;
+      var b = {
+        label: isSS ? 'Superserie ' + ssN : 'Serie normali',
+        note: isSS ? letters[bi] + '1, ' + letters[bi] + '2, recupero, ' + sets + ' giri' : sets + ' serie',
+        kind: isSS ? 'ss' : 'single',
+        rest: isSS ? 'Recupero ' + restSS + ' s dopo ' + lastTag : 'Recupero ' + restS + ' s tra le serie',
+        items: items.map(function (x, ii) {
+          return { id: stamp + '_' + (k++), tag: letters[bi] + (ii + 1), reps: x.slot.big ? repsBig : repsIso, muscle: gname(x.g), sets: sets, opts: x.slot.opts.map(function (y) { return { n: y.n, t: y.t }; }) };
+        })
+      };
+      minutes += isSS ? sets * (1.5 + restSS / 60) : sets * (0.75 + restS / 60);
+      return b;
+    });
+    if (cardio) {
+      var copts = CARDIO_OPTS.filter(function (x) { return optOk(x, f.eq); }).map(function (y) { return { n: y.n, t: y.t }; });
+      blocks.push({ label: 'Cardio finale', note: cardio + ' minuti', kind: 'single', bigN: String(cardio), bigU: 'min', rest: 'Ritmo costante, senza fermarti.',
+        items: [{ id: stamp + '_c', tag: 'C', reps: cardio + ' min', muscle: 'Cardio', sets: 1, opts: copts }] });
+    }
+    minutes = Math.round(minutes / 5) * 5;
+    var notes = [];
+    if (prof && prof.note) notes.push(prof.note);
+    if (minutes > f.time + 4) notes.push('Con ' + gs.length + ' gruppi la scheda dura circa ' + minutes + ' minuti, più dei ' + f.time + ' scelti. Togli un gruppo o allunga il tempo.');
+    if (skipped.length) notes.push('Senza ' + EQUIP[f.eq].toLowerCase() + ' non ho esercizi per: ' + skipped.join(', ') + '.');
+    var metaParts = [minutes + ' min circa'];
+    if (prof) metaParts.push(prof.n);
+    metaParts.push(STYLES[style], EQUIP[f.eq], LEVELS[f.level]);
+    return { plan: { title: gs.map(gname).join(' · '), meta: metaParts.join(' · '), note: notes.join(' '), blocks: blocks } };
+  }
+
+  // ---------- Stato ----------
+  var KEY = 'scheda-superserie-v2';
+  var state = { view: 'setup', form: { groups: [], time: 60, style: 'ss', eq: 'g', level: 'i', profile: '', emph: 'bal' }, plan: null, opt: {}, done: {}, kg: {}, extra: {}, info: {} };
+  try { var raw = localStorage.getItem(KEY); if (raw) { var pp = JSON.parse(raw); for (var kk in pp) state[kk] = pp[kk]; } } catch (e) {}
+  if (state.view === 'plan' && !state.plan) state.view = 'setup';
+  if (!state.form.emph) state.form.emph = 'bal';
+  if (typeof state.form.profile !== 'string') state.form.profile = '';
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function setsFor(ex) { return (ex.sets || 3) + (state.extra[ex.id] || 0); }
+  function doneArr(ex) { return state.done[ex.id] || []; }
+  function optIdx(ex) { var i = state.opt[ex.id]; return (typeof i === 'number' && i < ex.opts.length) ? i : 0; }
+  function findEx(id) {
+    var found = null;
+    if (state.plan) state.plan.blocks.forEach(function (b) { b.items.forEach(function (e) { if (e.id === id) found = e; }); });
+    return found;
+  }
+  function presetPlan(i) {
+    var s = SESSIONS[i];
+    return { title: s.sub.replace(/, /g, ' · '), meta: 'circa 60 min · Superserie · Palestra completa', note: '', blocks: s.blocks, preset: true };
+  }
+
+  // ---------- Schermata di scelta ----------
+  function chip(label, pressed, attr, val) {
+    return '<button type="button" class="chip" aria-pressed="' + pressed + '" ' + attr + '="' + esc(val) + '">' + esc(label) + '</button>';
+  }
+  function seg(obj, cur, attr) {
+    var h = '<div class="chips">';
+    Object.keys(obj).forEach(function (k) { h += chip(obj[k], cur === k, attr, k); });
+    return h + '</div>';
+  }
+  function renderSetup(err) {
+    document.body.className = 'setup';
+    var h1 = document.getElementById('h1'); h1.textContent = 'Che allenamento fai?'; h1.style.fontSize = '';
+    document.getElementById('sub').textContent = 'Scegli gruppi, tempo e attrezzatura. La scheda si crea da sola.';
+    document.getElementById('timerbar').hidden = true;
+    var f = state.form, h = '';
+    var prof = PROFILES[f.profile] || null;
+    var cnt = f.groups.length || (prof ? prof.groups.length : 0);
+    h += '<div class="hero" aria-hidden="true"><div class="hero-big"><b>' + cnt + '</b><span>' + (cnt === 1 ? 'gruppo' : 'gruppi') + '</span></div><div class="hero-small"><b>' + f.time + '</b><span>min</span></div></div>';
+    h += '<section class="panel"><h2>Obiettivo <span class="cap">facoltativo</span></h2><p class="hint">' + (prof ? esc(prof.d) : 'Scegli un profilo e la scheda si adatta: ripetizioni, recuperi, cardio. Se lo salti, la scheda è quella standard.') + '</p><div class="chips">';
+    Object.keys(PROFILES).forEach(function (k) { h += chip(PROFILES[k].n, f.profile === k, 'data-prof', k); });
+    h += '</div></section>';
+    h += '<section class="panel"><h2>Enfasi <span class="cap">facoltativa</span></h2><p class="hint">Se hai poco tempo, i gruppi scelti qui ricevono più esercizi.</p>' + seg(EMPH, f.emph, 'data-emph') + '</section>';
+    h += '<section class="panel"><h2>Gruppi muscolari</h2><p class="hint">Scegline quanti vuoi. Con meno tempo, meno gruppi.' + (prof ? ' Se non ne scegli, uso quelli dell\'obiettivo.' : '') + '</p><div class="chips">';
+    GROUPS.forEach(function (g) { h += chip(g.n, f.groups.indexOf(g.id) >= 0, 'data-g', g.id); });
+    h += '</div></section>';
+    h += '<section class="panel"><h2>Tempo</h2><p class="hint">Minuti totali, riscaldamento compreso.</p><div class="times">';
+    TIMES.forEach(function (t) { h += '<button type="button" class="tbtn" aria-pressed="' + (f.time === t) + '" data-time="' + t + '" aria-label="' + t + ' minuti">' + t + '</button>'; });
+    h += '</div></section>';
+    if (!(prof && prof.style)) h += '<section class="panel"><h2>Stile</h2><p class="hint">Le superserie alternano due esercizi senza pause lunghe e tengono alti i battiti.</p>' + seg(STYLES, f.style, 'data-style') + '</section>';
+    h += '<section class="panel"><h2>Attrezzatura</h2>' + seg(EQUIP, f.eq, 'data-eq') + '</section>';
+    h += '<section class="panel"><h2>Livello</h2><p class="hint">Cambia il numero di serie e le ripetizioni.</p>' + seg(LEVELS, f.level, 'data-level') + '</section>';
+    h += '<div class="cta-row"><button type="button" class="primary" data-go="1">Crea la<br>scheda</button><div class="cta-side"><p class="err" id="err" role="alert">' + (err ? esc(err) : '') + '</p>';
+    if (state.plan) h += '<button type="button" class="textbtn" data-back="1">Torna alla scheda in corso: ' + esc(state.plan.title) + '</button>';
+    h += '</div></div>';
+    h += '<section class="panel" style="margin-top:14px"><h2>Schede pronte</h2><div class="presets">';
+    SESSIONS.forEach(function (s, i) { h += '<button type="button" class="preset" data-preset="' + i + '"><span><b>' + esc(s.sub) + '</b><span class="cap" style="display:block">Superserie, gambe a parte, circa 60 min</span></span><span class="go" aria-hidden="true">&rarr;</span></button>'; });
+    h += '</div></section>';
+    document.getElementById('app').innerHTML = h;
+  }
+
+  // ---------- Scheda ----------
+  function exHtml(ex) {
+    var oi = optIdx(ex), op = ex.opts[oi], n = setsFor(ex), d = doneArr(ex);
+    var count = 0; for (var i = 0; i < n; i++) if (d[i]) count++;
+    var kgKey = ex.id + '|' + oi;
+    var h = '<div class="ex' + (count === n ? ' complete' : '') + '" data-ex="' + ex.id + '">';
+    h += '<div class="ex-top"><div class="tag">' + esc(ex.tag) + '</div><div><div class="ex-name">' + esc(op.n) + '</div><div class="ex-meta">' + esc(ex.muscle) + ' · ' + n + ' × ' + esc(ex.reps) + '</div></div></div>';
+    h += '<div class="sets">';
+    for (var s = 0; s < n; s++) h += '<button class="set" type="button" data-set="' + s + '" aria-pressed="' + (!!d[s]) + '" aria-label="Serie ' + (s + 1) + '">' + (s + 1) + '</button>';
+    h += '<button class="mini" type="button" data-act="add" aria-label="Aggiungi una serie">+</button>';
+    h += '<label class="kg"><span>kg</span><input type="text" inputmode="decimal" id="kg-' + ex.id + '" data-kg="' + esc(kgKey) + '" value="' + esc(state.kg[kgKey] || '') + '" placeholder="0"></label>';
+    h += '</div>';
+    h += '<div class="tools"><select id="alt-' + ex.id + '" data-act="alt" aria-label="Alternativa per ' + esc(ex.tag) + '">';
+    ex.opts.forEach(function (x, i) { h += '<option value="' + i + '"' + (i === oi ? ' selected' : '') + '>' + (i === 0 ? 'Base: ' : 'Alternativa: ') + esc(x.n) + '</option>'; });
+    h += '</select><button type="button" data-act="info" aria-expanded="' + (!!state.info[ex.id]) + '">Info</button></div>';
+    h += '<dl class="info"' + (state.info[ex.id] ? '' : ' hidden') + '><div><dt>Come: </dt><dd>' + esc(op.t) + '</dd></div><div><dt>Muscoli: </dt><dd>' + esc(ex.muscle) + '</dd></div><div><dt>Serie e ripetizioni: </dt><dd>' + n + ' × ' + esc(ex.reps) + '</dd></div></dl>';
+    return h + '</div>';
+  }
+  function blocksHtml() {
+    var h = '';
+    state.plan.blocks.forEach(function (b) {
+      var n0 = b.bigN || (b.items[0].sets || 3);
+      h += '<section class="block"><div class="block-h"><div><h2>' + esc(b.label) + '</h2><span class="cap">' + esc(b.note) + '</span></div><div class="big-n"><b>' + n0 + '</b><span>' + (b.bigU || (b.kind === 'ss' ? 'giri' : 'serie')) + '</span></div></div>';
+      b.items.forEach(function (ex) { h += exHtml(ex); });
+      h += '<div class="rest-note cap">' + esc(b.rest) + '</div></section>';
+    });
+    return h;
+  }
+  function renderPlan() {
+    var p = state.plan;
+    document.body.className = 'plan has-timer';
+    var h1 = document.getElementById('h1'); h1.textContent = p.title; h1.style.fontSize = p.title.length > 28 ? '2rem' : '';
+    document.getElementById('sub').textContent = p.meta;
+    document.getElementById('timerbar').hidden = false;
+    var h = '<div class="row-links"><button type="button" class="textbtn" id="change">Cambia scheda</button><button type="button" class="textbtn" id="reset">Azzera spunte</button></div>';
+    if (p.note) h += '<p class="cap" style="font-weight:700;color:var(--fg);margin:6px 0 0">' + esc(p.note) + '</p>';
+    h += '<section class="stat" aria-live="polite"><svg class="ring" viewBox="0 0 200 200" role="img" aria-label="Avanzamento della seduta"><circle class="track" cx="100" cy="100" r="69"/><circle class="fill" id="ring" cx="100" cy="100" r="69" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 100 100)"/></svg><div class="stat-row"><span class="cap">Serie fatte</span><span class="num"><b id="cnum">0</b><i id="ctot">/ 0</i></span></div></section>';
+    h += '<div class="blocks" id="blocks">' + blocksHtml() + '</div>';
+    document.getElementById('app').innerHTML = h;
+    updateProgress();
+  }
+  function rerenderBlocks() { document.getElementById('blocks').innerHTML = blocksHtml(); updateProgress(); }
+  function updateProgress() {
+    var total = 0, done = 0;
+    state.plan.blocks.forEach(function (b) {
+      b.items.forEach(function (ex) { var n = setsFor(ex), d = doneArr(ex); total += n; for (var i = 0; i < n; i++) if (d[i]) done++; });
+    });
+    var pct = total ? Math.round(done / total * 100) : 0;
+    document.getElementById('cnum').textContent = done;
+    document.getElementById('ctot').textContent = '/ ' + total;
+    document.getElementById('ring').setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
+  }
+  function render() { if (state.view === 'plan' && state.plan) renderPlan(); else renderSetup(); }
+
+  // ---------- Eventi ----------
+  document.getElementById('app').addEventListener('click', function (e) {
+    var t = e.target, el;
+    if (state.view === 'setup') {
+      if ((el = t.closest('[data-g]'))) {
+        var g = el.getAttribute('data-g'), ix = state.form.groups.indexOf(g);
+        if (ix >= 0) state.form.groups.splice(ix, 1); else state.form.groups.push(g);
+        save(); renderSetup(); return;
+      }
+      if ((el = t.closest('[data-time]'))) { state.form.time = parseInt(el.getAttribute('data-time'), 10); save(); renderSetup(); return; }
+      if ((el = t.closest('[data-prof]'))) { var pk = el.getAttribute('data-prof'); state.form.profile = state.form.profile === pk ? '' : pk; save(); renderSetup(); return; }
+      if ((el = t.closest('[data-emph]'))) { state.form.emph = el.getAttribute('data-emph'); save(); renderSetup(); return; }
+      if ((el = t.closest('[data-style]'))) { state.form.style = el.getAttribute('data-style'); save(); renderSetup(); return; }
+      if ((el = t.closest('[data-eq]'))) { state.form.eq = el.getAttribute('data-eq'); save(); renderSetup(); return; }
+      if ((el = t.closest('[data-level]'))) { state.form.level = el.getAttribute('data-level'); save(); renderSetup(); return; }
+      if (t.closest('[data-go]')) {
+        if (!state.form.groups.length && !state.form.profile) { renderSetup('Scegli almeno un gruppo muscolare o un obiettivo.'); return; }
+        var res = generate(state.form);
+        if (res.error) { renderSetup(res.error); return; }
+        state.plan = res.plan; state.view = 'plan'; save(); render(); window.scrollTo(0, 0); return;
+      }
+      if (t.closest('[data-back]')) { state.view = 'plan'; save(); render(); window.scrollTo(0, 0); return; }
+      if ((el = t.closest('[data-preset]'))) {
+        state.plan = presetPlan(parseInt(el.getAttribute('data-preset'), 10)); state.view = 'plan'; save(); render(); window.scrollTo(0, 0); return;
+      }
+      return;
+    }
+    if (t.id === 'change') { state.view = 'setup'; save(); render(); window.scrollTo(0, 0); return; }
+    if (t.id === 'reset') {
+      state.plan.blocks.forEach(function (b) { b.items.forEach(function (ex) { delete state.done[ex.id]; }); });
+      save(); rerenderBlocks(); return;
+    }
+    var card = t.closest('[data-ex]'); if (!card) return;
+    var ex = findEx(card.getAttribute('data-ex')); if (!ex) return;
+    var setBtn = t.closest('[data-set]'), act = t.closest('[data-act]');
+    if (setBtn) {
+      var i = parseInt(setBtn.getAttribute('data-set'), 10);
+      var arr = (state.done[ex.id] || []).slice(); arr[i] = !arr[i]; state.done[ex.id] = arr;
+      save(); rerenderBlocks();
+    } else if (act && act.getAttribute('data-act') === 'add') {
+      state.extra[ex.id] = (state.extra[ex.id] || 0) + 1; save(); rerenderBlocks();
+    } else if (act && act.getAttribute('data-act') === 'info') {
+      state.info[ex.id] = !state.info[ex.id]; save(); rerenderBlocks();
+    }
+  });
+  document.getElementById('app').addEventListener('change', function (e) {
+    if (state.view !== 'plan') return;
+    var card = e.target.closest('[data-ex]'); if (!card) return;
+    var ex = findEx(card.getAttribute('data-ex'));
+    if (ex && e.target.getAttribute('data-act') === 'alt') { state.opt[ex.id] = parseInt(e.target.value, 10); save(); rerenderBlocks(); }
+  });
+  document.getElementById('app').addEventListener('input', function (e) {
+    var k = e.target.getAttribute('data-kg');
+    if (k !== null) { state.kg[k] = e.target.value; save(); }
+  });
+
+  // ---------- Timer di recupero ----------
+  var tid = null, endAt = 0, timeEl = document.getElementById('time');
+  function fmt(sec) { var m = Math.floor(sec / 60), s = sec % 60; return m + ':' + (s < 10 ? '0' : '') + s; }
+  function tick() {
+    var left = Math.max(0, Math.round((endAt - Date.now()) / 1000));
+    timeEl.textContent = fmt(left);
+    if (left === 0) {
+      clearInterval(tid); tid = null; timeEl.classList.add('end'); timeEl.textContent = 'Via';
+      try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+    }
+  }
+  document.getElementById('timerbar').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-t]');
+    if (b) {
+      if (tid) clearInterval(tid);
+      timeEl.classList.remove('end');
+      endAt = Date.now() + parseInt(b.getAttribute('data-t'), 10) * 1000;
+      tick(); tid = setInterval(tick, 250);
+    }
+    if (e.target.id === 'stop') {
+      if (tid) clearInterval(tid); tid = null; timeEl.classList.remove('end'); timeEl.textContent = '0:00';
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
