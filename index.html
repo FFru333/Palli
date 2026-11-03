@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Palli</title>
-<meta name="theme-color" content="#e45a38">
+<meta name="theme-color" content="#ece6d4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Palli">
@@ -13,24 +13,24 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* Swiss poster style: flat colour fields, hairline grid, huge numerals, black circles.
    Setup screen is orange with black; the workout screen is warm grey with red. One visual world, light only. */
 :root {
-  --orange: #e45a38;
-  --red: #e33a1f;
-  --dred: #9b2915;
-  --beige: #d9d5c8;
-  --black: #0d0d0d;
-  --font: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --orange: #d2362b;
+  --red: #d2362b;
+  --dred: #8f2219;
+  --beige: #ece6d4;
+  --black: #14110f;
+  --font: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+  --display: "Alfa Slab One", Georgia, "Times New Roman", serif;
   color-scheme: light;
 }
-body.setup { --bg: var(--orange); --fg: var(--black); --sub: #2b0e06; --hair: rgba(13,13,13,.55); --accent: var(--black); --accent-ink: #fff; --on-dark: #fff; --sat-bg: #fff; --arc: #fff; }
-body.plan  { --on-dark: var(--beige); --sat-bg: var(--orange); --bg: var(--beige);  --fg: var(--black); --sub: #57534a; --hair: rgba(13,13,13,.28); --accent: var(--red);   --accent-ink: #ffffff; }
+body.setup, body.plan { --bg: var(--beige); --fg: var(--black); --sub: #5a5345; --hair: rgba(20,17,15,.35); --accent: var(--red); --accent-ink: var(--beige); --on-dark: var(--beige); --sat-bg: var(--beige); --arc: var(--red); }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 17px; line-height: 1.4; height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 17.5px; line-height: 1.4; height: 100%; overflow: hidden; }
 .shell { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
 body.has-timer .scroll { padding-bottom: 104px; }
 button, input, select { font: inherit; color: inherit; }
@@ -40,16 +40,18 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .scroll { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
 .wrap, #app, .blocks, .block, .ex, .tools, .sets { min-width: 0; max-width: 100%; }
 .ex-name, .ex-meta { overflow-wrap: anywhere; }
-.stage { flex: none; background: var(--bg); border-bottom: 1px solid var(--hair); padding-top: env(safe-area-inset-top); }
+.stage { flex: none; background: var(--bg); border-bottom: 3px solid var(--fg); padding-top: env(safe-area-inset-top); }
 .stage-in { max-width: 560px; margin: 0 auto; padding: 10px 20px 0; }
 .stage-bar { display: flex; align-items: center; gap: 12px; }
-.stage-bar h1 { font-weight: 800; font-size: clamp(2.2rem, 11vw, 3rem); line-height: .9; letter-spacing: -.05em; margin: 0; text-transform: uppercase; }
+.stage-bar h1 { font-weight: 800; font-size: clamp(2.2rem, 11vw, 3rem); line-height: .9;  margin: 0; text-transform: uppercase; }
 .stage-bar h1 .home { all: unset; cursor: pointer; display: inline-block; }
 .stage-bar h1 .home:focus-visible { outline: 3px solid var(--fg); outline-offset: 4px; border-radius: 4px; }
-.stage .meta { display: none; margin-left: auto; text-align: right; font-size: .95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stage-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.stage .meta { display: none; text-align: right; font-size: .95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .stage.hidden .meta { display: block; }
-.stage-toggle { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; display: grid; place-items: center; padding: 0; flex: none; margin-left: auto; }
-.stage.hidden .stage-toggle { margin-left: 0; }
+.stage-toggle { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; display: grid; place-items: center; padding: 0; flex: none; }
+.me-btn { height: 44px; min-width: 44px; padding: 0 16px; border-radius: 99px; border: 2px solid var(--fg); background: transparent; font-weight: 800; font-size: 1rem;  }
+.me-btn[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: var(--beige); }
 .stage-toggle svg { transition: transform .25s ease; }
 .stage.hidden .stage-toggle svg { transform: rotate(180deg); }
 .wheel-collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .25s ease; }
@@ -63,86 +65,87 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .cap { font-size: .85rem; font-weight: 500; color: var(--sub); }
 
 /* wheel: one progress circle for every screen. Big in the page, small in the fixed dock once it scrolls away. */
-body.plan { --arc: var(--orange); }
-body.plan .w-disc { color: var(--orange); }
 .wheel { position: relative; aspect-ratio: 1; }
 .wheel.lg { width: min(100%, 300px, 30dvh); margin: 4px auto 12px; }
 .wheel.sm { width: 56px; flex: none; }
 .wheel svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .wheel .w-track { fill: none; stroke: var(--fg); stroke-opacity: .2; stroke-width: 10; }
 .wheel .w-fill { fill: none; stroke: var(--arc); stroke-width: 10; transition: stroke-dasharray .35s ease; }
-.w-disc { position: absolute; inset: 8%; border-radius: 50%; background: var(--black); color: var(--on-dark); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.w-num { font-weight: 800; letter-spacing: -.06em; line-height: .85; font-variant-numeric: tabular-nums; }
+.w-disc { position: absolute; inset: 8%; border-radius: 50%; background: var(--black); color: var(--red); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.w-num { font-weight: 800;  line-height: .85; font-variant-numeric: tabular-nums; }
 .w-cap { font-weight: 500; }
 .wheel.lg .w-num { font-size: clamp(3rem, 14dvh, 6.4rem); }
 .wheel.lg .w-disc { padding-bottom: 14%; }
 .wheel.lg .w-cap { font-size: .95rem; margin-top: 6px; }
-.wheel.sm .w-num { font-size: 1.15rem; letter-spacing: -.04em; line-height: 1; }
+.wheel.sm .w-num { font-size: 1.15rem;  line-height: 1; }
 .wheel.sm .w-cap { display: none; }
 .w-sat { position: absolute; width: 30%; aspect-ratio: 1; left: 9%; bottom: 5%; border-radius: 50%; background: var(--sat-bg); color: var(--black); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
-.w-sat b { font-size: 1.8rem; font-weight: 800; letter-spacing: -.04em; }
+.w-sat b { font-size: 1.8rem; font-weight: 800;  }
 .w-sat span { font-size: .78rem; font-weight: 600; margin-top: 2px; }
 
 /* setup */
 .panel { border-top: 1px solid var(--hair); padding: 16px 0 22px; display: flex; flex-direction: column; gap: 12px; }
-.panel h2 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.panel h2 { margin: 0; font-size: 1.35rem; font-weight: 800;  line-height: 1.1; }
 .panel .hint { margin: -6px 0 0; color: var(--sub); font-size: .92rem; font-weight: 500; max-width: 44ch; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { min-height: 44px; padding: 0 17px; border-radius: 99px; border: 2px solid var(--fg); background: transparent; font-weight: 700; white-space: nowrap; }
-.chip[aria-pressed="true"] { background: var(--fg); color: var(--on-dark); }
+.chip[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: var(--beige); }
 .chip.sm { min-height: 38px; padding: 0 13px; font-size: .9rem; }
 .subrow { display: flex; flex-direction: column; gap: 8px; padding: 10px 0 2px 14px; border-left: 2px solid var(--fg); }
 .more { border-top: 1px solid var(--hair); padding: 14px 0 6px; }
 .more summary { display: flex; flex-direction: column; gap: 2px; cursor: pointer; list-style: none; position: relative; padding-right: 36px; }
 .more summary::-webkit-details-marker { display: none; }
-.more summary b { font-size: 1.2rem; font-weight: 800; letter-spacing: -.02em; }
+.more summary b { font-size: 1.2rem; font-weight: 800;  }
 .more summary::after { content: ''; position: absolute; right: 8px; top: 8px; width: 10px; height: 10px; border-right: 2.5px solid var(--fg); border-bottom: 2.5px solid var(--fg); transform: rotate(45deg); transition: transform .2s; }
 .more[open] summary::after { transform: rotate(-135deg); top: 14px; }
 .subpanel { display: flex; flex-direction: column; gap: 10px; padding: 16px 0 6px; }
-.subpanel h3 { margin: 0; font-size: 1rem; font-weight: 800; letter-spacing: -.01em; }
+.subpanel h3 { margin: 0; font-size: 1rem; font-weight: 800;  }
 .subpanel .hint { margin: -4px 0 0; color: var(--sub); font-size: .9rem; font-weight: 500; }
 .chip:disabled { cursor: default; }
 .chip:disabled[aria-pressed="false"] { opacity: .4; }
 .times { display: flex; flex-wrap: wrap; gap: 10px; }
-.tbtn { width: 62px; height: 62px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; font-size: 1.45rem; font-weight: 800; letter-spacing: -.04em; display: flex; align-items: center; justify-content: center; }
-.tbtn[aria-pressed="true"] { background: var(--fg); color: var(--on-dark); }
+.tbtn { width: 62px; height: 62px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; font-size: 1.45rem; font-weight: 800;  display: flex; align-items: center; justify-content: center; }
+.tbtn[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: var(--beige); }
 .cta-row { border-top: 1px solid var(--hair); padding: 18px 0 8px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-.primary { width: 132px; height: 132px; border-radius: 50%; border: 0; background: var(--fg); color: var(--on-dark); font-size: 1.15rem; font-weight: 800; line-height: 1.1; letter-spacing: -.01em; flex: none; }
+.primary { width: 132px; height: 132px; border-radius: 50%; border: 0; background: var(--red); color: var(--beige); font-size: 1rem; font-weight: 800; line-height: 1.1;  flex: none; }
 .cta-side { flex: 1 1 160px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .err { margin: 0; font-weight: 700; font-size: .95rem; }
 .textbtn { background: none; border: 0; padding: 6px 0; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-align: left; }
 .presets { display: flex; flex-direction: column; }
 .preset { background: none; border: 0; border-top: 1px solid var(--hair); padding: 14px 0; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .preset:first-child { border-top: 0; padding-top: 4px; }
-.preset b { font-size: 1.15rem; font-weight: 800; letter-spacing: -.02em; display: block; }
+.preset b { font-size: 1.15rem; font-weight: 800;  display: block; }
 .preset .go { width: 44px; height: 44px; border-radius: 50%; background: var(--fg); color: var(--on-dark); display: flex; align-items: center; justify-content: center; font-weight: 800; flex: none; }
 
 /* workout */
 .row-links { display: flex; gap: 18px; padding: 6px 0 0; }
 .plan-info { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--hair); padding-top: 14px; margin-bottom: 14px; }
-.plan-title { margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -.04em; line-height: 1.05; text-wrap: balance; }
+.plan-title { margin: 0; font-size: 1.7rem; font-weight: 800;  line-height: 1.05; text-wrap: balance; }
 .blocks { display: flex; flex-direction: column; }
 .block { border-top: 1px solid var(--hair); padding: 14px 0 6px; }
 .block-h { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding-bottom: 6px; }
-.block-h h2 { margin: 0; font-size: 1.45rem; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.block-h h2 { margin: 0; font-size: 1.45rem; font-weight: 800;  line-height: 1; }
 .block-h .cap { display: block; margin-top: 6px; }
 .big-n { display: flex; align-items: baseline; gap: 6px; }
-.big-n b { font-size: 3.2rem; font-weight: 800; line-height: .85; letter-spacing: -.06em; }
+.big-n b { font-size: 3.2rem; font-weight: 800; line-height: .85;  }
 .big-n span { font-size: .85rem; font-weight: 500; color: var(--sub); }
 .ex { padding: 16px 0; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--hair); }
 .ex-top { display: flex; gap: 12px; align-items: flex-start; }
-.tag { flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--fg); color: var(--on-dark); display: grid; place-items: center; font-weight: 800; font-size: .85rem; letter-spacing: -.02em; }
-.ex-name { font-weight: 700; font-size: 1.2rem; line-height: 1.15; letter-spacing: -.02em; }
+.tag { flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--fg); color: var(--on-dark); display: grid; place-items: center; font-weight: 800; font-size: .85rem;  }
+.ex-name { font-weight: 700; font-size: 1.2rem; line-height: 1.15;  }
 .ex-meta { color: var(--sub); font-size: .88rem; font-weight: 500; margin-top: 3px; }
-.ex.complete .tag { background: var(--orange); color: var(--black); }
+.ex.complete .tag { background: var(--red); color: var(--beige); }
+.exbar { display: flex; gap: 4px; height: 6px; }
+.exbar i { flex: 1; border-radius: 3px; background: var(--fg); opacity: .16; transition: opacity .2s, background-color .2s; }
+.exbar i.on { background: var(--orange); opacity: 1; }
 .sets { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.set { width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; font-size: 1.35rem; font-weight: 800; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
-.set[aria-pressed="true"] { background: var(--orange); border-color: var(--orange); color: var(--black); }
+.set { width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; font-size: 1.35rem; font-weight: 800;  font-variant-numeric: tabular-nums; }
+.set[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: var(--beige); }
 .mini:disabled { opacity: .35; cursor: default; }
 .mini { width: 54px; height: 54px; border-radius: 50%; border: 2px dashed var(--fg); background: transparent; font-size: 1.5rem; font-weight: 500; line-height: 1; }
 .kg { display: flex; align-items: flex-end; gap: 6px; margin-left: auto; }
 .kg span { font-size: .85rem; font-weight: 500; color: var(--sub); padding-bottom: 6px; }
-.kg input { width: 86px; height: 48px; border: 0; border-bottom: 2px solid var(--fg); background: transparent; border-radius: 0; text-align: right; font-size: 1.7rem; font-weight: 800; letter-spacing: -.04em; padding: 0 2px; font-variant-numeric: tabular-nums; }
+.kg input { width: 86px; height: 48px; border: 0; border-bottom: 2px solid var(--fg); background: transparent; border-radius: 0; text-align: right; font-size: 1.7rem; font-weight: 800;  padding: 0 2px; font-variant-numeric: tabular-nums; }
 .kg input::placeholder { color: var(--sub); opacity: .55; }
 .tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .tools select { flex: 1 1 200px; min-width: 0; max-width: 100%; text-overflow: ellipsis; height: 44px; border-radius: 99px; border: 2px solid var(--fg); background: transparent; padding: 0 14px; font-weight: 600; font-size: .95rem; }
@@ -157,13 +160,54 @@ body.plan .w-disc { color: var(--orange); }
 .timer[hidden] { display: none; }
 .timer-in { max-width: 560px; margin: 0 auto; display: flex; align-items: center; gap: 8px; }
 .timer .lab { font-size: .75rem; font-weight: 500; opacity: .8; }
-.timer .time { font-size: 2.3rem; font-weight: 800; letter-spacing: -.05em; min-width: 82px; font-variant-numeric: tabular-nums; line-height: 1; }
+.timer .time { font-size: 2.3rem; font-weight: 800;  min-width: 82px; font-variant-numeric: tabular-nums; line-height: 1; }
 .timer .time.end { color: #ff8a6b; }
-.timer button { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--beige); background: transparent; color: var(--beige); font-weight: 800; font-size: 1rem; letter-spacing: -.02em; padding: 0; }
+.timer button { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--beige); background: transparent; color: var(--beige); font-weight: 800; font-size: 1rem;  padding: 0; }
 .timer .stop { margin-left: auto; background: var(--red); border-color: var(--red); color: #fff; font-size: .8rem; }
 body.setup footer { display: none; }
+.flash { margin: 0 0 10px; padding: 12px 14px; border-radius: 14px; background: var(--fg); color: var(--on-dark); font-weight: 700; }
+.wk { display: flex; flex-wrap: wrap; gap: 8px; }
+.wkc { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--fg); display: grid; place-items: center; font-weight: 800; font-size: .95rem; }
+.wkc.on { background: var(--red); border-color: var(--red); color: var(--beige); }
+.daycard, .savedrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--hair); }
+.daycard:first-of-type, .savedrow:first-of-type { border-top: 0; }
+.daycard b, .savedrow b { display: block; font-size: 1.1rem; font-weight: 800;  line-height: 1.15; }
+.daycard.next b::after { content: ' · prossima'; font-weight: 600; font-size: .85rem; letter-spacing: 0; }
+.pillbtn { height: 44px; padding: 0 18px; border-radius: 99px; border: 2px solid var(--fg); background: transparent; font-weight: 800; flex: none; }
+.pillbtn.solid { background: var(--red); border-color: var(--red); color: var(--beige); }
+.rowbtns { display: flex; gap: 8px; flex: none; }
+.finish { border-top: 1px solid var(--hair); padding: 18px 0 8px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.finbtn { width: 104px; height: 104px; border-radius: 50%; border: 0; background: var(--fg); color: var(--on-dark); font-weight: 800; font-size: 1rem; line-height: 1.1; flex: none; }
+.finish .side { flex: 1 1 150px; }
+.finish .side .hint { margin: 4px 0 0; color: var(--sub); font-size: .9rem; font-weight: 500; }
+.saverow { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 8px; }
+.saverow input { flex: 1 1 160px; min-width: 0; height: 44px; border: 2px solid var(--fg); border-radius: 99px; background: transparent; padding: 0 16px; font-weight: 600; }
+textarea.bk { width: 100%; min-height: 96px; border: 2px solid var(--fg); border-radius: 14px; background: transparent; padding: 10px 12px; font: 500 .8rem/1.3 ui-monospace, Menlo, monospace; color: var(--fg); resize: vertical; }
 footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22px; border-top: 1px solid var(--hair); margin-top: 18px; }
 @media (prefers-reduced-motion: reduce) { .wheel .w-fill, .wheel-collapse, .stage-toggle svg { transition: none; } }
+
+/* World Gym look: cream ribbed cotton, red slab lettering, black print. */
+body { background-image: repeating-linear-gradient(90deg, rgba(20,17,15,.04) 0 1px, transparent 1px 4px); }
+.stage-bar h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2rem, 9.5vw, 2.6rem); line-height: 1; letter-spacing: .03em; color: var(--red); text-shadow: 2px 2px 0 var(--black); text-transform: uppercase; }
+.panel h2, .block-h h2, .plan-title, .more summary b { font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: .03em; }
+.panel h2 { font-size: 1.1rem; line-height: 1.15; }
+.block-h h2 { font-size: 1.15rem; line-height: 1.1; }
+.plan-title { font-size: 1.45rem; line-height: 1.12; }
+.more summary b { font-size: 1.02rem; }
+.subpanel h3 { text-transform: uppercase; letter-spacing: .07em; font-size: .85rem; }
+.w-num, .big-n b, .w-sat b { font-family: var(--display); font-weight: 400; }
+.wheel.lg .w-num { letter-spacing: 0; }
+.big-n b { font-size: 2.6rem; }
+.w-sat b { font-size: 1.45rem; }
+.ex-name { font-weight: 700; font-size: 1.3rem; line-height: 1.15; }
+.chip, .tbtn, .set, .pillbtn, .tools button, .me-btn, .textbtn, .stage .meta { font-weight: 700; }
+.preset b, .daycard b, .savedrow b { font-weight: 700; }
+.primary, .finbtn { font-family: var(--display); font-weight: 400; letter-spacing: .02em; text-transform: uppercase; }
+.finbtn { font-size: .95rem; background: var(--red); color: var(--beige); }
+.wheel .w-track { stroke-opacity: .18; }
+.cap, .hint { letter-spacing: .01em; }
+.row-links { flex-wrap: wrap; gap: 4px 18px; }
+.textbtn { white-space: nowrap; }
 </style>
 </head>
 <body class="setup">
@@ -172,10 +216,13 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     <div class="stage-in">
       <div class="stage-bar">
         <h1 id="h1"><button type="button" class="home" id="home" aria-label="Palli, torna alla pagina iniziale">PALLI</button></h1>
+        <div class="stage-right">
         <div class="meta" id="stagemeta"></div>
+        <button type="button" class="me-btn" id="mebtn" aria-pressed="false" aria-label="La mia area">Io</button>
         <button type="button" class="stage-toggle" id="stagetoggle" aria-expanded="true" aria-label="Nascondi il cerchio">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 9 5.5l6 6"/></svg>
         </button>
+        </div>
       </div>
       <div class="wheel-collapse"><div id="wheelslot"></div></div>
     </div>
@@ -183,7 +230,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   <div class="scroll" id="scroll">
     <div class="wrap">
       <div id="app"><div class="nojs"><b>Questa anteprima non esegue gli script.</b><p>La scheda funziona solo aprendo il file in un browser: salva il file, poi aprilo con Safari o Chrome. Se è online, apri il link nel browser invece che nell'anteprima di un'app di messaggi o di file.</p></div></div>
-      <footer>Le spunte e i carichi restano salvati solo su questo browser, per chi apre la pagina.</footer>
+      <footer>I tuoi dati restano su questo browser. In «Io» trovi il backup per spostarli su un altro dispositivo.</footer>
     </div>
   </div>
 </div>
@@ -573,7 +620,8 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     o('Jumping jack e skip sul posto', 'Intervalli da 30 secondi con 30 di pausa.', 'c')
   ];
 
-  function generate(f, sel, title) {
+  var uidN = 0;
+  function generate(f, sel, title, variant) {
     var prof = PROFILES[f.profile] || null;
     var sets = (prof && prof.sets) || ({ p: 2, i: 3, a: 4 }[f.level] || 3);
     var repsBig = (prof && prof.big) || ({ p: '12-15', i: '8-12', a: '6-10' }[f.level] || '8-12');
@@ -591,6 +639,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
       var s = slotsFor(g, f.eq);
       if (s.length) { gs.push(g); per.push(s); } else skipped.push(gname(g));
     });
+    if (variant) per = per.map(function (sl) { var r = variant % sl.length; return sl.slice(r).concat(sl.slice(0, r)); });
     if (!gs.length) return { error: 'Con questa attrezzatura non ho esercizi per i gruppi scelti. Prova con un\'altra attrezzatura.' };
 
     var picked = [];
@@ -629,7 +678,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
       picked.forEach(function (a) { blocksRaw.push([a]); });
     }
 
-    var stamp = 'g' + Date.now().toString(36), k = 0, ssN = 0, singleN = 0, minutes = 5 + cardio, letters = 'ABCDEFGHIJKL';
+    var stamp = 'g' + Date.now().toString(36) + (++uidN).toString(36), k = 0, ssN = 0, singleN = 0, minutes = 5 + cardio, letters = 'ABCDEFGHIJKL';
     var blocks = blocksRaw.map(function (items, bi) {
       var isSS = items.length === 2;
       if (isSS) ssN++;
@@ -666,15 +715,22 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
 
   // ---------- Stato ----------
   var KEY = 'scheda-superserie-v2';
-  var state = { view: 'setup', form: { area: '', macros: [], sub: {}, time: 60, style: 'ss', eq: 'g', level: 'i', profile: '', touched: {} }, plan: null, opt: {}, done: {}, kg: {}, extra: {}, info: {}, ui: {} };
+  var state = { view: 'setup', form: { area: '', macros: [], sub: {}, time: 60, style: 'ss', eq: 'g', level: 'i', profile: '', touched: {} }, plan: null, opt: {}, done: {}, kg: {}, extra: {}, info: {}, ui: {}, me: { goal: '', perWeek: 3, time: 60, eq: 'g', level: 'i' }, saved: [], program: null, history: [] };
   try { var raw = localStorage.getItem(KEY); if (raw) { var pp = JSON.parse(raw); for (var kk in pp) state[kk] = pp[kk]; } } catch (e) {}
   if (state.view === 'plan' && !state.plan) state.view = 'setup';
   if (typeof state.form.area !== 'string') state.form.area = '';
   if (!Array.isArray(state.form.macros)) state.form.macros = [];
   if (!state.form.sub || typeof state.form.sub !== 'object') state.form.sub = {};
   if (!state.ui) state.ui = {};
+  if (!state.me || typeof state.me !== 'object') state.me = { goal: '', perWeek: 3, time: 60, eq: 'g', level: 'i' };
+  if (!Array.isArray(state.saved)) state.saved = [];
+  if (!Array.isArray(state.history)) state.history = [];
+  if (state.view === 'me') state.view = 'setup';
+  // All'apertura si parte sempre dalla home vuota. La scheda in corso resta raggiungibile da lì.
+  resetForm(); state.view = 'setup';
   if (!state.form.touched) state.form.touched = {};
   if (typeof state.form.profile !== 'string') state.form.profile = '';
+  function resetForm() { state.form = { area: '', macros: [], sub: {}, time: 60, style: 'ss', eq: (state.me && state.me.eq) || 'g', level: (state.me && state.me.level) || 'i', profile: '', touched: {} }; }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
   function setThemeColor(c) { var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', c); }
@@ -703,7 +759,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   }
   function setupSteps() { var f = state.form; return (effGroups(f).length ? 1 : 0) + (f.touched && f.touched.time ? 1 : 0); }
   function renderSetup(err) {
-    document.body.className = 'setup'; setThemeColor('#e45a38');
+    document.body.className = 'setup'; setThemeColor('#ece6d4');
     document.getElementById('timerbar').hidden = true;
     var f = state.form, h = '';
     var prof = PROFILES[f.profile] || null;
@@ -745,7 +801,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     // Altre impostazioni (chiuse di default)
     var forced = prof && prof.style, lvLock = prof && prof.sets && prof.big;
     var summary = [STYLES[forced || f.style], EQUIP[f.eq], LEVELS[f.level]].join(' · ');
-    h += '<details class="more"' + (state.ui.more ? ' open' : '') + '><summary><b>Altre impostazioni</b><span class="cap">' + esc(summary) + '</span></summary>';
+    h += '<details class="more" data-ui="more"' + (state.ui.more ? ' open' : '') + '><summary><b>Altre impostazioni</b><span class="cap">' + esc(summary) + '</span></summary>';
     h += '<div class="subpanel"><h3>Stile</h3><p class="hint">' + (forced ? 'Fissato dall\'obiettivo ' + esc(prof.n) + '.' : 'Le superserie alternano due esercizi e tengono alti i battiti.') + '</p>' + seg(STYLES, forced || f.style, 'data-style', !!forced) + '</div>';
     h += '<div class="subpanel"><h3>Attrezzatura</h3>' + seg(EQUIP, f.eq, 'data-eq') + '</div>';
     var lvHint = lvLock ? 'Fissato dall\'obiettivo ' + esc(prof.n) + '.' : (prof && prof.big ? 'Cambia il numero di serie.' : 'Cambia serie e ripetizioni.');
@@ -759,6 +815,156 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     updateWheel();
   }
 
+
+  // ---------- Area personale ----------
+  var DAYS = {
+    push: { n: 'Spinta', macros: ['petto', 'spalle', 'braccia'], sub: { braccia: ['tricipiti'] } },
+    pull: { n: 'Tirata', macros: ['schiena', 'braccia'], sub: { braccia: ['bicipiti'] } },
+    legs: { n: 'Gambe e glutei', macros: ['gambe'] },
+    pecTri: { n: 'Petto e tricipiti', macros: ['petto', 'braccia'], sub: { braccia: ['tricipiti'] } },
+    schBic: { n: 'Schiena e bicipiti', macros: ['schiena', 'braccia'], sub: { braccia: ['bicipiti'] } },
+    spaAdd: { n: 'Spalle e addome', macros: ['spalle', 'addome'] },
+    legsAbs: { n: 'Gambe e addome', macros: ['gambe', 'addome'] },
+    upper: { n: 'Parte alta', area: 'up' }, lower: { n: 'Parte bassa', area: 'low' }, full: { n: 'Tutto il corpo', area: 'all' }
+  };
+  var SPLITS_STD = { 2: ['upper', 'lower'], 3: ['push', 'pull', 'legs'], 4: ['pecTri', 'schBic', 'legs', 'spaAdd'], 5: ['pecTri', 'schBic', 'legs', 'spaAdd', 'legsAbs'], 6: ['push', 'pull', 'legs', 'push', 'pull', 'legs'] };
+  var SPLITS_FAT = { 2: ['upper', 'lower'], 3: ['upper', 'lower', 'full'], 4: ['upper', 'lower', 'upper', 'lower'], 5: ['upper', 'lower', 'upper', 'lower', 'full'], 6: ['upper', 'lower', 'full', 'upper', 'lower', 'full'] };
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function weekStart(ts) { var d = new Date(ts), day = (d.getDay() + 6) % 7; return new Date(d.getFullYear(), d.getMonth(), d.getDate() - day).getTime(); }
+  function weekCount() { var ws = weekStart(Date.now()); return state.history.filter(function (x) { return weekStart(x.t) === ws; }).length; }
+  function fmtDate(ts) { try { return new Date(ts).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }); } catch (e) { return ''; } }
+  function savedIndex(id) { for (var i = 0; i < state.saved.length; i++) if (state.saved[i].id === id) return i; return -1; }
+  function newId(prefix) { return prefix + Date.now().toString(36) + (++uidN).toString(36); }
+  function clearProgress(plan) {
+    plan.blocks.forEach(function (b) { b.items.forEach(function (ex) { delete state.done[ex.id]; delete state.extra[ex.id]; delete state.opt[ex.id]; delete state.info[ex.id]; }); });
+  }
+  // Copia del piano con id nuovi: scelte (alternative, serie) diventano la base, i carichi seguono.
+  function bakePlan(plan) {
+    var sid = newId('m'), k = 0, out = clone(plan);
+    delete out.savedId; delete out.programDay; delete out.tag;
+    out.blocks.forEach(function (b, bi) {
+      b.items.forEach(function (ex, ii) {
+        var live = plan.blocks[bi].items[ii], oi = optIdx(live), nid = sid + '_' + (k++);
+        ex.sets = setsFor(live);
+        ex.opts = [live.opts[oi]].concat(live.opts.filter(function (x, i) { return i !== oi; }));
+        var w = state.kg[live.id + '|' + oi]; if (w) state.kg[nid + '|0'] = w;
+        ex.id = nid;
+      });
+    });
+    return out;
+  }
+  function openPlan(plan, tag, programDay) {
+    var p = clone(plan); p.tag = tag || ''; if (programDay !== undefined) p.programDay = programDay;
+    clearProgress(p); state.plan = p; state.view = 'plan'; state.ui.saving = false; state.ui.saved = '';
+    save(); render(); document.getElementById('scroll').scrollTop = 0;
+  }
+  function buildProgram(m) {
+    var fat = m.goal === 'dimagrimento' || m.goal === 'resistenza';
+    var keys = (fat ? SPLITS_FAT : SPLITS_STD)[m.perWeek] || SPLITS_STD[3], seen = {}, days = [];
+    keys.forEach(function (key) {
+      var d = DAYS[key], v = seen[key] || 0; seen[key] = v + 1;
+      var f = { area: d.area || 'custom', macros: d.macros || [], sub: d.sub || {}, time: m.time, style: 'ss', eq: m.eq, level: m.level, profile: m.goal, touched: {} };
+      var res = generate(f, effGroups(f), planTitle(f), v);
+      if (res.plan) days.push({ name: d.n, plan: res.plan });
+    });
+    return { t: Date.now(), goal: m.goal, perWeek: m.perWeek, time: m.time, days: days };
+  }
+  function finishSession() {
+    var t = planTotals(), p = state.plan;
+    if (!t.done) { var e = document.getElementById('finerr'); if (e) e.textContent = 'Spunta almeno una serie prima di terminare.'; return; }
+    state.history.unshift({ t: Date.now(), title: p.title, done: t.done, total: t.total, day: p.programDay === undefined ? null : p.programDay });
+    state.history = state.history.slice(0, 300);
+    if (p.programDay !== undefined && state.program && state.program.days[p.programDay]) state.program.days[p.programDay].last = Date.now();
+    clearProgress(p);
+    state.ui.flash = 'Seduta registrata: ' + p.title + ' (' + t.done + ' serie).';
+    state.view = 'me'; save(); render(); document.getElementById('scroll').scrollTop = 0;
+  }
+  function backupText() {
+    var kg = {}; Object.keys(state.kg).forEach(function (k) { if (state.kg[k]) kg[k] = state.kg[k]; });
+    return JSON.stringify({ palli: 1, me: state.me, saved: state.saved, program: state.program, history: state.history, kg: kg });
+  }
+  function restoreBackup(txt) {
+    var d; try { d = JSON.parse(txt); } catch (e) { return 'Il testo non è un backup valido.'; }
+    if (!d || d.palli !== 1 || !Array.isArray(d.saved) || !Array.isArray(d.history)) return 'Il testo non è un backup di Palli.';
+    if (d.me && typeof d.me === 'object') state.me = d.me;
+    state.saved = d.saved; state.program = d.program || null; state.history = d.history;
+    if (d.kg && typeof d.kg === 'object') state.kg = d.kg;
+    return '';
+  }
+  function circleBtns(vals, cur, attr, labelFn) {
+    var h = '<div class="times">';
+    vals.forEach(function (v) { h += '<button type="button" class="tbtn" aria-pressed="' + (cur === v) + '" ' + attr + '="' + v + '" aria-label="' + esc(labelFn(v)) + '">' + v + '</button>'; });
+    return h + '</div>';
+  }
+  function renderMe(err) {
+    document.body.className = 'setup'; setThemeColor('#ece6d4');
+    document.getElementById('timerbar').hidden = true;
+    var m = state.me, prof = PROFILES[m.goal] || null, h = '';
+    if (state.ui.flash) { h += '<p class="flash" role="status">' + esc(state.ui.flash) + '</p>'; state.ui.flash = ''; }
+
+    // Settimana
+    var cnt = weekCount();
+    h += '<section class="panel"><h2>Questa settimana</h2><div class="wk">';
+    for (var i = 1; i <= m.perWeek; i++) h += '<span class="wkc' + (i <= cnt ? ' on' : '') + '">' + i + '</span>';
+    h += '</div><p class="hint">' + cnt + ' di ' + m.perWeek + ' sedute' + (cnt > m.perWeek ? ' (oltre l\'obiettivo)' : '') + '. La settimana riparte il lunedì.</p></section>';
+
+    // Obiettivi
+    h += '<section class="panel"><h2>I miei obiettivi</h2><h3 style="margin:0;font-size:1rem;font-weight:800">Cosa vuoi ottenere <span class="cap">facoltativo</span></h3><div class="chips">';
+    Object.keys(PROFILES).forEach(function (k) { h += chip(PROFILES[k].n, m.goal === k, 'data-megoal', k); });
+    h += '</div><p class="hint">' + (prof ? esc(prof.d) : 'Senza obiettivo il piano è quello standard.') + '</p>';
+    h += '<h3 style="margin:6px 0 0;font-size:1rem;font-weight:800">Sedute a settimana</h3>' + circleBtns([2, 3, 4, 5, 6], m.perWeek, 'data-week', function (v) { return v + ' sedute a settimana'; });
+    h += '<h3 style="margin:6px 0 0;font-size:1rem;font-weight:800">Minuti per seduta</h3>' + circleBtns(TIMES, m.time, 'data-metime', function (v) { return v + ' minuti'; });
+    h += '<details class="more" data-ui="meMore"' + (state.ui.meMore ? ' open' : '') + ' style="border-top:0;padding-top:6px"><summary><b>Attrezzatura e livello</b><span class="cap">' + esc(EQUIP[m.eq] + ' · ' + LEVELS[m.level]) + '</span></summary>';
+    h += '<div class="subpanel"><h3>Attrezzatura</h3>' + seg(EQUIP, m.eq, 'data-meeq') + '</div>';
+    var lvLock = prof && prof.sets && prof.big;
+    h += '<div class="subpanel"><h3>Livello</h3>' + (lvLock ? '<p class="hint">Fissato dall\'obiettivo ' + esc(prof.n) + '.</p>' : '') + seg(LEVELS, m.level, 'data-melevel', !!lvLock) + '</div></details></section>';
+
+    // Piano
+    var pr = state.program;
+    h += '<section class="panel"><h2>Il mio piano</h2>';
+    if (pr && pr.days.length) {
+      var ws = weekStart(Date.now()), nextI = -1;
+      pr.days.forEach(function (d, i) { if (nextI < 0 && !(d.last && weekStart(d.last) === ws)) nextI = i; });
+      h += '<p class="hint">' + pr.days.length + ' sedute a settimana' + (pr.goal && PROFILES[pr.goal] ? ' · ' + esc(PROFILES[pr.goal].n) : '') + ' · ' + pr.time + ' min. Per cambiarlo modifica gli obiettivi e rigenera.</p><div>';
+      pr.days.forEach(function (d, i) {
+        var done = d.last && weekStart(d.last) === ws;
+        h += '<div class="daycard' + (i === nextI ? ' next' : '') + '"><div><b>Giorno ' + (i + 1) + ': ' + esc(d.name) + '</b><span class="cap">' + esc(d.plan.meta.split(' · ')[0]) + (done ? ' · fatta questa settimana' : '') + '</span></div><button type="button" class="pillbtn' + (i === nextI ? ' solid' : '') + '" data-openday="' + i + '">Apri</button></div>';
+      });
+      h += '</div>';
+    } else {
+      h += '<p class="hint">Crea un piano settimanale in base ai tuoi obiettivi: ogni giorno ha già la sua scheda.</p>';
+    }
+    h += '<div class="rowbtns"><button type="button" class="pillbtn solid" id="mkplan">' + (pr ? 'Rigenera il piano' : 'Crea il mio piano') + '</button></div>';
+    if (err) h += '<p class="err" role="alert">' + esc(err) + '</p>';
+    h += '</section>';
+
+    // Schede salvate
+    h += '<section class="panel"><h2>Le mie schede</h2>';
+    if (state.saved.length) {
+      h += '<div>';
+      state.saved.forEach(function (sv) {
+        var conf = state.ui.confirmDel === sv.id;
+        h += '<div class="savedrow"><div><b>' + esc(sv.name) + '</b><span class="cap">' + esc(sv.plan.meta.split(' · ')[0]) + ' · ' + esc(fmtDate(sv.t)) + '</span></div><div class="rowbtns"><button type="button" class="pillbtn solid" data-opensaved="' + esc(sv.id) + '">Apri</button><button type="button" class="pillbtn" data-delsaved="' + esc(sv.id) + '">' + (conf ? 'Conferma' : 'Elimina') + '</button></div></div>';
+      });
+      h += '</div>';
+    } else h += '<p class="hint">Nessuna scheda salvata. Dentro una scheda tocca «Salva scheda»: rimangono anche le alternative scelte, le serie e i carichi.</p>';
+    h += '</section>';
+
+    // Storico
+    h += '<section class="panel"><h2>Ultime sedute</h2>';
+    if (state.history.length) {
+      h += '<div>';
+      state.history.slice(0, 6).forEach(function (x) { h += '<div class="savedrow"><div><b>' + esc(x.title) + '</b><span class="cap">' + esc(fmtDate(x.t)) + ' · ' + x.done + ' serie fatte</span></div></div>'; });
+      h += '</div>';
+    } else h += '<p class="hint">Quando finisci una scheda tocca «Termina seduta»: la trovi qui e conta nell\'obiettivo della settimana.</p>';
+    h += '</section>';
+
+    // Backup
+    h += '<details class="more" data-ui="bk"' + (state.ui.bk ? ' open' : '') + '><summary><b>Backup</b><span class="cap">I dati sono solo su questo browser</span></summary><div class="subpanel"><p class="hint">Copia questo testo per spostare schede, piano, storico e carichi su un altro dispositivo.</p><textarea class="bk" id="bktext" readonly aria-label="Backup">' + esc(backupText()) + '</textarea><div class="rowbtns"><button type="button" class="pillbtn solid" id="bkcopy">Copia</button></div><h3>Ripristina</h3><p class="hint">Incolla un backup qui sotto. Sostituisce schede, piano, storico e carichi di questo dispositivo.</p><textarea class="bk" id="bkin" aria-label="Incolla il backup"></textarea><div class="rowbtns"><button type="button" class="pillbtn" id="bkgo">Ripristina</button></div><p class="err" id="bkmsg" role="status"></p></div></details>';
+    document.getElementById('app').innerHTML = h;
+    updateWheel();
+  }
+
   // ---------- Scheda ----------
   function exHtml(ex) {
     var oi = optIdx(ex), op = ex.opts[oi], n = setsFor(ex), d = doneArr(ex);
@@ -766,6 +972,9 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     var kgKey = ex.id + '|' + oi;
     var h = '<div class="ex' + (count === n ? ' complete' : '') + '" data-ex="' + ex.id + '">';
     h += '<div class="ex-top"><div class="tag">' + esc(ex.tag) + '</div><div><div class="ex-name">' + esc(op.n) + '</div><div class="ex-meta">' + esc(ex.muscle) + ' · ' + (ex.cardio ? '' : n + ' × ') + esc(ex.reps) + '</div></div></div>';
+    h += '<div class="exbar" aria-hidden="true">';
+    for (var q = 0; q < n; q++) h += '<i' + (d[q] ? ' class="on"' : '') + '></i>';
+    h += '</div>';
     h += '<div class="sets">';
     for (var s = 0; s < n; s++) h += '<button class="set" type="button" data-set="' + s + '" aria-pressed="' + (!!d[s]) + '" aria-label="Serie ' + (s + 1) + '">' + (s + 1) + '</button>';
     if (!ex.cardio) h += '<button class="mini" type="button" data-act="sub" aria-label="Togli una serie"' + (n <= 1 ? ' disabled' : '') + '>&minus;</button><button class="mini" type="button" data-act="add" aria-label="Aggiungi una serie">+</button>';
@@ -797,12 +1006,16 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   function planMinutes(p) { if (p.minutes) return p.minutes; var m = /(\d+)/.exec(p.meta || ''); return m ? parseInt(m[1], 10) : 60; }
   function renderPlan() {
     var p = state.plan;
-    document.body.className = 'plan has-timer'; setThemeColor('#d9d5c8');
+    document.body.className = 'plan has-timer'; setThemeColor('#ece6d4');
     document.getElementById('timerbar').hidden = false;
-    var h = '<section class="plan-info"><h2 class="plan-title">' + esc(p.title) + '</h2><span class="cap">' + esc(p.meta) + '</span>';
+    var h = '<section class="plan-info"><h2 class="plan-title">' + esc(p.title) + '</h2>' + (p.tag ? '<span class="cap" style="font-weight:700;color:var(--fg)">' + esc(p.tag) + '</span>' : '') + '<span class="cap">' + esc(p.meta) + '</span>';
     if (p.note) h += '<span class="cap" style="font-weight:700;color:var(--fg)">' + esc(p.note) + '</span>';
-    h += '<div class="row-links"><button type="button" class="textbtn" id="change">Cambia scheda</button><button type="button" class="textbtn" id="reset">Azzera spunte</button></div></section>';
+    h += '<div class="row-links"><button type="button" class="textbtn" id="change">Cambia scheda</button><button type="button" class="textbtn" id="reset">Azzera spunte</button><button type="button" class="textbtn" id="savebtn">' + (p.savedId && savedIndex(p.savedId) >= 0 ? 'Aggiorna scheda salvata' : 'Salva scheda') + '</button></div>';
+    if (state.ui.saving) h += '<div class="saverow"><input type="text" id="savename" maxlength="40" aria-label="Nome della scheda" value="' + esc(p.title) + '"><button type="button" class="pillbtn solid" id="savego">Salva</button>' + (p.savedId && savedIndex(p.savedId) >= 0 ? '<button type="button" class="pillbtn" id="savenew">Come nuova</button>' : '') + '<button type="button" class="pillbtn" id="savecancel">Annulla</button></div>';
+    if (state.ui.saved) h += '<span class="cap" style="font-weight:700;color:var(--fg)">' + esc(state.ui.saved) + '</span>';
+    h += '</section>';
     h += '<div class="blocks" id="blocks">' + blocksHtml() + '</div>';
+    h += '<section class="finish"><button type="button" class="finbtn" id="finish">Termina<br>seduta</button><div class="side"><p class="err" id="finerr" role="alert"></p><p class="hint">Registra la seduta nel tuo storico e azzera le spunte.</p></div></section>';
     document.getElementById('app').innerHTML = h;
     updateWheel();
   }
@@ -815,25 +1028,65 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     if (sat !== undefined) h += '<div class="w-sat"><b>' + esc(sat) + '</b><span>' + esc(satCap) + '</span></div>';
     return h + '</div>';
   }
+  function planProgress() {
+    var fr = [], done = 0;
+    state.plan.blocks.forEach(function (b) {
+      b.items.forEach(function (ex) {
+        var n = setsFor(ex), d = doneArr(ex), c = 0;
+        for (var i = 0; i < n; i++) if (d[i]) c++;
+        fr.push(n ? c / n : 0); if (n && c === n) done++;
+      });
+    });
+    return { fracs: fr, done: done, total: fr.length };
+  }
+  // Un segmento per elemento: ogni esercizio ha il suo tratto, che si riempie con le serie.
+  function drawRing(slot, fracs) {
+    var svg = slot.querySelector('svg'), N = fracs.length, NS = 'http://www.w3.org/2000/svg';
+    if (svg.getAttribute('data-n') !== String(N)) {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      var gap = N > 1 ? 1.4 : 0, unit = 100 / N, len = unit - gap;
+      for (var i = 0; i < N; i++) {
+        var ang = -90 + (i * unit + gap / 2) * 3.6;
+        ['w-track', 'w-fill'].forEach(function (cls) {
+          var c = document.createElementNS(NS, 'circle');
+          c.setAttribute('class', cls); c.setAttribute('cx', '100'); c.setAttribute('cy', '100'); c.setAttribute('r', '95');
+          c.setAttribute('pathLength', '100'); c.setAttribute('transform', 'rotate(' + ang + ' 100 100)');
+          c.setAttribute('stroke-dasharray', (cls === 'w-track' ? len : 0) + ' 100'); c.setAttribute('data-len', String(len));
+          svg.appendChild(c);
+        });
+      }
+      svg.setAttribute('data-n', String(N));
+    }
+    var fills = svg.querySelectorAll('.w-fill');
+    for (var j = 0; j < fills.length; j++) fills[j].setAttribute('stroke-dasharray', (parseFloat(fills[j].getAttribute('data-len')) * Math.max(0, Math.min(1, fracs[j]))) + ' 100');
+  }
   function updateWheel() {
     var slot = document.getElementById('wheelslot'), isPlan = state.view === 'plan' && state.plan;
     var v = isPlan ? 'plan' : 'setup';
     if (slot.getAttribute('data-v') !== v) { slot.innerHTML = wheelHtml('lg', 0, '', 0, 'min'); slot.setAttribute('data-v', v); }
-    var pct, num, cap, sat, meta;
+    var fr, num, cap, sat, meta;
     if (isPlan) {
-      var t = planTotals(); pct = t.total ? Math.round(t.done / t.total * 100) : 0;
-      num = t.done; cap = '/ ' + t.total + ' serie'; sat = planMinutes(state.plan); meta = t.done + ' / ' + t.total + ' serie';
+      var pg = planProgress(); fr = pg.fracs;
+      num = pg.done; cap = '/ ' + pg.total + (pg.total === 1 ? ' esercizio' : ' esercizi'); sat = planMinutes(state.plan); meta = pg.done + ' / ' + pg.total + ' esercizi';
+    } else if (state.view === 'me') {
+      var wc = weekCount(), pw = state.me.perWeek; fr = [Math.min(1, wc / pw)];
+      num = wc; cap = '/ ' + pw + ' sedute'; sat = state.me.time; meta = wc + ' / ' + pw + ' sedute';
     } else {
-      var n = setupSteps(); pct = Math.round(n / 2 * 100);
+      var n = setupSteps(); fr = [n / 2];
       num = macroCount(state.form); cap = num === 1 ? 'zona' : 'zone'; sat = state.form.time; meta = n + ' / 2 scelte';
     }
     slot.querySelector('.w-num').textContent = num;
     slot.querySelector('.w-cap').textContent = cap;
     slot.querySelector('.w-sat b').textContent = sat;
-    slot.querySelector('.w-fill').setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
+    drawRing(slot, fr);
     document.getElementById('stagemeta').textContent = meta;
   }
+  document.getElementById('mebtn').addEventListener('click', function () {
+    if (state.view === 'me') resetForm();
+    state.view = state.view === 'me' ? 'setup' : 'me'; state.ui.confirmDel = ''; save(); render(); document.getElementById('scroll').scrollTop = 0;
+  });
   document.getElementById('home').addEventListener('click', function () {
+    if (state.view !== 'setup') resetForm();
     state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0;
   });
   var stageHidden = false;
@@ -855,7 +1108,10 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     }, { passive: true });
   })();
 
-  function render() { if (state.view === 'plan' && state.plan) renderPlan(); else renderSetup(); }
+  function render() {
+    var mb = document.getElementById('mebtn'); if (mb) mb.setAttribute('aria-pressed', String(state.view === 'me'));
+    if (state.view === 'plan' && state.plan) renderPlan(); else if (state.view === 'me') renderMe(); else renderSetup();
+  }
 
   // ---------- Eventi ----------
   document.getElementById('app').addEventListener('click', function (e) {
@@ -893,7 +1149,59 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
       }
       return;
     }
-    if (t.id === 'change') { state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
+    if (state.view === 'me') {
+      var meEl;
+      if ((meEl = t.closest('[data-megoal]'))) { var gk = meEl.getAttribute('data-megoal'); state.me.goal = state.me.goal === gk ? '' : gk; save(); renderMe(); return; }
+      if ((meEl = t.closest('[data-week]'))) { state.me.perWeek = parseInt(meEl.getAttribute('data-week'), 10); save(); renderMe(); return; }
+      if ((meEl = t.closest('[data-metime]'))) { state.me.time = parseInt(meEl.getAttribute('data-metime'), 10); save(); renderMe(); return; }
+      if ((meEl = t.closest('[data-meeq]'))) { state.me.eq = meEl.getAttribute('data-meeq'); save(); renderMe(); return; }
+      if ((meEl = t.closest('[data-melevel]'))) { state.me.level = meEl.getAttribute('data-melevel'); save(); renderMe(); return; }
+      if (t.id === 'mkplan') {
+        var prg = buildProgram(state.me);
+        if (!prg.days.length) { renderMe('Con questa attrezzatura non riesco a creare il piano. Prova con un\'altra.'); return; }
+        state.program = prg; save(); renderMe(); return;
+      }
+      if ((meEl = t.closest('[data-openday]'))) {
+        var di = parseInt(meEl.getAttribute('data-openday'), 10), dd = state.program && state.program.days[di];
+        if (dd) openPlan(dd.plan, 'Il mio piano · giorno ' + (di + 1) + ': ' + dd.name, di);
+        return;
+      }
+      if ((meEl = t.closest('[data-opensaved]'))) {
+        var si = savedIndex(meEl.getAttribute('data-opensaved'));
+        if (si >= 0) { var sv = state.saved[si]; var op = clone(sv.plan); op.savedId = sv.id; openPlan(op, 'Scheda salvata: ' + sv.name); }
+        return;
+      }
+      if ((meEl = t.closest('[data-delsaved]'))) {
+        var did = meEl.getAttribute('data-delsaved');
+        if (state.ui.confirmDel === did) { var di2 = savedIndex(did); if (di2 >= 0) state.saved.splice(di2, 1); state.ui.confirmDel = ''; } else state.ui.confirmDel = did;
+        save(); renderMe(); return;
+      }
+      if (t.id === 'bkcopy') {
+        var ta = document.getElementById('bktext'), msg = document.getElementById('bkmsg');
+        ta.focus(); ta.select();
+        var ok = false; try { ok = navigator.clipboard && navigator.clipboard.writeText(ta.value); } catch (e2) {}
+        if (ok && ok.then) ok.then(function () { msg.textContent = 'Copiato.'; }, function () { msg.textContent = 'Testo selezionato: copialo a mano.'; });
+        else msg.textContent = 'Testo selezionato: copialo a mano.';
+        return;
+      }
+      if (t.id === 'bkgo') {
+        var r = restoreBackup(document.getElementById('bkin').value);
+        if (r) { document.getElementById('bkmsg').textContent = r; return; }
+        state.ui.flash = 'Dati ripristinati.'; save(); renderMe(); return;
+      }
+      return;
+    }
+    if (t.id === 'savebtn') { state.ui.saving = !state.ui.saving; state.ui.saved = ''; renderPlan(); var inp = document.getElementById('savename'); if (inp) inp.focus(); return; }
+    if (t.id === 'savecancel') { state.ui.saving = false; renderPlan(); return; }
+    if (t.id === 'savego' || t.id === 'savenew') {
+      var nm = (document.getElementById('savename').value || '').trim() || state.plan.title, baked = bakePlan(state.plan);
+      var idx = state.plan.savedId ? savedIndex(state.plan.savedId) : -1;
+      if (t.id === 'savego' && idx >= 0) { state.saved[idx].plan = baked; state.saved[idx].name = nm; state.saved[idx].t = Date.now(); }
+      else { var nid = newId('s'); state.saved.unshift({ id: nid, name: nm, t: Date.now(), plan: baked }); state.plan.savedId = nid; }
+      state.ui.saving = false; state.ui.saved = 'Salvata in «Io» → Le mie schede.'; save(); renderPlan(); return;
+    }
+    if (t.id === 'finish') { finishSession(); return; }
+    if (t.id === 'change') { resetForm(); state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
     if (t.id === 'reset') {
       state.plan.blocks.forEach(function (b) { b.items.forEach(function (ex) { delete state.done[ex.id]; }); });
       save(); rerenderBlocks(); return;
@@ -919,7 +1227,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     }
   });
   document.getElementById('app').addEventListener('toggle', function (e) {
-    if (e.target && e.target.classList && e.target.classList.contains('more')) { state.ui.more = e.target.open; save(); }
+    if (e.target && e.target.classList && e.target.classList.contains('more')) { state.ui[e.target.getAttribute('data-ui') || 'more'] = e.target.open; save(); }
   }, true);
   document.getElementById('app').addEventListener('change', function (e) {
     if (state.view !== 'plan') return;
