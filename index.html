@@ -42,6 +42,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .stage-in { max-width: 560px; margin: 0 auto; padding: 10px 20px 0; }
 .stage-bar { display: flex; align-items: center; gap: 12px; }
 .stage-bar h1 { font-weight: 800; font-size: clamp(2.2rem, 11vw, 3rem); line-height: .9; letter-spacing: -.05em; margin: 0; text-transform: uppercase; }
+.stage-bar h1 .home { all: unset; cursor: pointer; display: inline-block; }
+.stage-bar h1 .home:focus-visible { outline: 3px solid var(--fg); outline-offset: 4px; border-radius: 4px; }
 .stage .meta { display: none; margin-left: auto; text-align: right; font-size: .95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .stage.hidden .meta { display: block; }
 .stage-toggle { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; display: grid; place-items: center; padding: 0; flex: none; margin-left: auto; }
@@ -157,7 +159,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   <div class="stage" id="stage">
     <div class="stage-in">
       <div class="stage-bar">
-        <h1 id="h1">PALLI</h1>
+        <h1 id="h1"><button type="button" class="home" id="home" aria-label="Palli, torna alla pagina iniziale">PALLI</button></h1>
         <div class="meta" id="stagemeta"></div>
         <button type="button" class="stage-toggle" id="stagetoggle" aria-expanded="true" aria-label="Nascondi il cerchio">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 9 5.5l6 6"/></svg>
@@ -754,6 +756,9 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     slot.querySelector('.w-fill').setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
     document.getElementById('stagemeta').textContent = meta;
   }
+  document.getElementById('home').addEventListener('click', function () {
+    state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0;
+  });
   var stageHidden = false;
   function applyStage() {
     document.getElementById('stage').classList.toggle('hidden', stageHidden);
