@@ -27,7 +27,7 @@
   color-scheme: light;
 }
 body.setup { --bg: var(--orange); --fg: var(--black); --sub: #2b0e06; --hair: rgba(13,13,13,.55); --accent: var(--black); --accent-ink: #fff; --on-dark: #fff; --sat-bg: #fff; --arc: #fff; }
-body.plan  { --on-dark: var(--beige); --sat-bg: var(--beige); --bg: var(--beige);  --fg: var(--black); --sub: #57534a; --hair: rgba(13,13,13,.28); --accent: var(--red);   --accent-ink: #ffffff; }
+body.plan  { --on-dark: var(--beige); --sat-bg: var(--orange); --bg: var(--beige);  --fg: var(--black); --sub: #57534a; --hair: rgba(13,13,13,.28); --accent: var(--red);   --accent-ink: #ffffff; }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 17px; line-height: 1.4; height: 100%; overflow: hidden; }
@@ -61,7 +61,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .cap { font-size: .85rem; font-weight: 500; color: var(--sub); }
 
 /* wheel: one progress circle for every screen. Big in the page, small in the fixed dock once it scrolls away. */
-body.plan { --arc: var(--red); }
+body.plan { --arc: var(--orange); }
+body.plan .w-disc { color: var(--orange); }
 .wheel { position: relative; aspect-ratio: 1; }
 .wheel.lg { width: min(100%, 300px, 30dvh); margin: 4px auto 12px; }
 .wheel.sm { width: 56px; flex: none; }
@@ -121,10 +122,10 @@ body.plan { --arc: var(--red); }
 .tag { flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--fg); color: var(--on-dark); display: grid; place-items: center; font-weight: 800; font-size: .85rem; letter-spacing: -.02em; }
 .ex-name { font-weight: 700; font-size: 1.2rem; line-height: 1.15; letter-spacing: -.02em; }
 .ex-meta { color: var(--sub); font-size: .88rem; font-weight: 500; margin-top: 3px; }
-.ex.complete .tag { background: var(--red); color: #fff; }
+.ex.complete .tag { background: var(--orange); color: var(--black); }
 .sets { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .set { width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; font-size: 1.35rem; font-weight: 800; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
-.set[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+.set[aria-pressed="true"] { background: var(--orange); border-color: var(--orange); color: var(--black); }
 .mini:disabled { opacity: .35; cursor: default; }
 .mini { width: 54px; height: 54px; border-radius: 50%; border: 2px dashed var(--fg); background: transparent; font-size: 1.5rem; font-weight: 500; line-height: 1; }
 .kg { display: flex; align-items: flex-end; gap: 6px; margin-left: auto; }
