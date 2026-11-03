@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Palli</title>
 <meta name="theme-color" content="#ece6d4">
-<meta name="palli-version" content="2026-11-03.1743">
+<meta name="palli-version" content="2026-11-03.1951">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Palli">
@@ -257,6 +257,8 @@ body.me .stage { border-bottom-color: var(--fg); }
 .w .big.red { color: var(--red); }
 .w .hint { margin: 0; color: var(--sub); font-size: .9rem; font-weight: 500; }
 .w .hint b { color: var(--fg); }
+.vtext { margin: 0; font-size: 1.05rem; line-height: 1.5; font-weight: 600; }
+.w .chips { gap: 6px; }
 .w .cap { color: var(--sub); }
 .w .err { color: #ff8a80; }
 .wkc.sm { width: 14px; height: 14px; border-width: 2px; }
@@ -811,14 +813,14 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
 
   // ---------- Stato ----------
   var KEY = 'scheda-superserie-v2';
-  var state = { view: 'setup', form: { area: '', macros: [], sub: {}, time: 60, style: 'ss', eq: 'g', level: 'i', profile: '', touched: {} }, plan: null, opt: {}, done: {}, kg: {}, extra: {}, info: {}, ui: {}, me: {}, saved: [], program: null, history: [] };
+  var state = { view: 'setup', form: { area: '', macros: [], sub: {}, time: 60, style: 'ss', eq: 'g', level: 'i', profile: '', touched: {} }, plan: null, opt: {}, done: {}, kg: {}, extra: {}, info: {}, ui: {}, me: {}, body: {}, saved: [], program: null, history: [] };
   try { var raw = localStorage.getItem(KEY); if (raw) { var pp = JSON.parse(raw); for (var kk in pp) state[kk] = pp[kk]; } } catch (e) {}
   if (state.view === 'plan' && !state.plan) state.view = 'setup';
   if (typeof state.form.area !== 'string') state.form.area = '';
   if (!Array.isArray(state.form.macros)) state.form.macros = [];
   if (!state.form.sub || typeof state.form.sub !== 'object') state.form.sub = {};
   if (!state.ui) state.ui = {};
-  migrateMe();
+  migrateMe(); migrateBody();
   if (!Array.isArray(state.saved)) state.saved = [];
   if (!Array.isArray(state.history)) state.history = [];
   // All'apertura si parte dalla home vuota, tranne dopo un aggiornamento con il gorilla (si resta dove si era).
@@ -829,11 +831,22 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   if (!state.form.touched) state.form.touched = {};
   if (typeof state.form.profile !== 'string') state.form.profile = '';
   function migrateMe() {
-    var d = { goals: [], perWeek: 3, time: 60, eq: 'g', level: 'i', injuries: [], weeks: 8, split: 'auto', focus: [], widgets: ['week', 'curve', 'plan', 'saved', 'recent'] };
+    var d = { goals: [], perWeek: 3, time: 60, eq: 'g', level: 'i', injuries: [], weeks: 8, split: 'auto', focus: [], widgets: ['verdict', 'week', 'body', 'curve', 'plan', 'saved', 'recent'] };
     if (!state.me || typeof state.me !== 'object') state.me = {};
     if (state.me.goal && !Array.isArray(state.me.goals)) state.me.goals = [state.me.goal];
     delete state.me.goal;
     Object.keys(d).forEach(function (k) { if (state.me[k] === undefined || (Array.isArray(d[k]) && !Array.isArray(state.me[k]))) state.me[k] = d[k]; });
+    if (!state.me.v3) {
+      var wl = state.me.widgets.filter(function (id) { return id !== 'verdict' && id !== 'body'; }), wi = wl.indexOf('week');
+      wl.splice(wi >= 0 ? wi + 1 : 0, 0, 'body'); wl.unshift('verdict'); state.me.widgets = wl; state.me.v3 = true;
+    }
+  }
+  function migrateBody() {
+    if (!state.body || typeof state.body !== 'object') state.body = {};
+    var b = state.body;
+    ['height', 'age', 'goalKg'].forEach(function (k) { if (typeof b[k] !== 'number' || !isFinite(b[k])) b[k] = null; });
+    if (!Array.isArray(b.log)) b.log = [];
+    b.log = b.log.filter(function (x) { return x && isFinite(x.t) && isFinite(x.kg); });
   }
   function setCta(msg, btns, isErr) {
     var bar = document.getElementById('ctabar'), m = document.getElementById('ctamsg');
@@ -1088,12 +1101,13 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   }
   function backupText() {
     var kg = {}; Object.keys(state.kg).forEach(function (k) { if (state.kg[k]) kg[k] = state.kg[k]; });
-    return JSON.stringify({ palli: 1, me: state.me, saved: state.saved, program: state.program, history: state.history, kg: kg });
+    return JSON.stringify({ palli: 1, me: state.me, body: state.body, saved: state.saved, program: state.program, history: state.history, kg: kg });
   }
   function restoreBackup(txt) {
     var d; try { d = JSON.parse(txt); } catch (e) { return 'Il testo non è un backup valido.'; }
     if (!d || d.palli !== 1 || !Array.isArray(d.saved) || !Array.isArray(d.history)) return 'Il testo non è un backup di Palli.';
     if (d.me && typeof d.me === 'object') { state.me = d.me; migrateMe(); }
+    if (d.body && typeof d.body === 'object') { state.body = d.body; migrateBody(); }
     state.saved = d.saved; state.program = d.program || null; state.history = d.history;
     if (d.kg && typeof d.kg === 'object') state.kg = d.kg;
     return '';
@@ -1165,7 +1179,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   }
 
   // ---------- Widget dell'area personale ----------
-  var WIDGET_DEFAULT = ['week', 'curve', 'plan', 'saved', 'recent'];
+  var WIDGET_DEFAULT = ['verdict', 'week', 'body', 'curve', 'plan', 'saved', 'recent'];
   var WIDGETS = {
     week: { n: 'Questa settimana', d: 'Sedute fatte rispetto al tuo obiettivo', w2: false, html: function (c) {
       var h = '<section class="w"><h2>Questa settimana</h2><div class="big' + (c.cnt >= c.m.perWeek ? ' red' : '') + '">' + c.cnt + '<small>/' + c.m.perWeek + '</small></div><div class="wk">';
@@ -1241,6 +1255,181 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
       return h + '</section>';
     } }
   };
+  // ---------- Corpo e verdetto ----------
+  function fmtKg(x) { return (Math.round(x * 10) / 10).toString().replace('.', ','); }
+  function parseNum(v) { var n = parseFloat(String(v || '').replace(',', '.')); return isFinite(n) ? n : NaN; }
+  function bodyLog() { return state.body.log.slice().sort(function (a, b) { return a.t - b.t; }); }
+  function dayKey(ts) { var d = new Date(ts); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+  function sparkSvg(log, goal) {
+    var W = 320, H = 84, pad = 8, top = 10, bot = 18, vals = log.map(function (x) { return x.kg; });
+    if (goal) vals.push(goal);
+    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+    if (mx - mn < 1) { mx += .5; mn -= .5; }
+    var n = log.length, sx = (W - 2 * pad) / Math.max(1, n - 1);
+    function Y(v) { return top + (H - top - bot) * (1 - (v - mn) / (mx - mn)); }
+    var pts = log.map(function (x, i) { return [pad + i * sx, Y(x.kg)]; });
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Peso nel tempo">';
+    if (goal) s += '<line x1="' + pad + '" y1="' + Y(goal).toFixed(1) + '" x2="' + (W - pad) + '" y2="' + Y(goal).toFixed(1) + '" stroke="#d2362b" stroke-dasharray="4 4" stroke-opacity=".8"/><text x="' + (W - pad) + '" y="' + (Y(goal) - 4).toFixed(1) + '" font-size="10" text-anchor="end" fill="#d2362b">obiettivo ' + fmtKg(goal) + '</text>';
+    s += '<path d="' + pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ') + '" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>';
+    pts.forEach(function (p, i) { s += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (i === n - 1 ? 5 : 2.6) + '" fill="' + (i === n - 1 ? '#d2362b' : 'currentColor') + '"/>'; });
+    s += '<text x="' + pad + '" y="' + (H - 4) + '" font-size="10" fill="currentColor" fill-opacity=".7">' + esc(fmtDate(log[0].t)) + '</text><text x="' + (W - pad) + '" y="' + (H - 4) + '" font-size="10" text-anchor="end" fill="currentColor" fill-opacity=".7">' + esc(fmtDate(log[n - 1].t)) + '</text></svg>';
+    return s;
+  }
+
+  // Verdetto ironico: frasi scritte a mano, scelte dai tuoi numeri. Nessuna intelligenza artificiale a runtime, tutto offline.
+  var VT = {
+    none: [['Non c\'è ancora nessuna seduta registrata: tutto da scrivere, a partire dalla prima.'],
+      ['Zero sedute registrate: la tua carriera atletica è ancora nella fase «ci penso su».', 'Nessuna seduta: l\'app è pronta, i tuoi muscoli stanno ancora decidendo se presentarsi.'],
+      ['Zero sedute. Per ora la tua unica ripetizione è telecomando, divano, telecomando.', 'Zero sedute registrate: hai scaricato un\'app per allenarti per sentirti in colpa in HD.']],
+    gone: [['L\'ultima seduta risale a {days} giorni fa: la palestra comincia a sentire la tua mancanza.'],
+      ['Ultima seduta {days} giorni fa: la palestra ti ha mandato una cartolina e tu hai risposto con un like.', '{days} giorni senza allenarti: i muscoli ti hanno dato per disperso.'],
+      ['{days} giorni senza allenarti: i muscoli ti hanno dato per disperso e il divano ha messo il tuo nome sul citofono.', 'Ultima seduta {days} giorni fa: ormai il tuo unico cardio è andare a prendere il telecomando.']],
+    goal: [['Settimana in regola, {cnt} sedute su {goal}: bravo davvero.'],
+      ['{cnt} sedute su {goal}: obiettivo centrato. Segnati la data, capita di rado.', 'Obiettivo della settimana preso, {cnt} su {goal}: non montarti la testa, che è l\'unica cosa che hai grossa.'],
+      ['{cnt} su {goal}: obiettivo centrato. Chi sei e che ne hai fatto del vero te?', 'Obiettivo settimanale centrato, {cnt} su {goal}: questa è la prova che ogni tanto anche i pigri si alzano dal divano.']],
+    late: [['Questa settimana non hai ancora iniziato e il tempo stringe.'],
+      ['Siamo a fine settimana e sei a zero sedute su {goal}: la costanza non è il tuo forte.', 'Zero su {goal} e la settimana sta finendo: bel lavoro di squadra, tu e il divano.'],
+      ['Zero sedute su {goal} e la settimana sta finendo: la tua costanza è come la tua panza, molle e in espansione.', 'Siamo quasi a domenica e hai fatto zero su {goal}: il tuo allenamento più intenso è stato scrollare l\'app.']],
+    mid: [['Questa settimana sei a {cnt} su {goal}: si può ancora fare.'],
+      ['{cnt} su {goal} per ora: non sei un disastro, ma ci vai vicino.', 'Sei a {cnt} su {goal}: mezzo impegno, mezzo risultato, mezza dignità.'],
+      ['{cnt} su {goal}: mediocre, come tutto quello che metti sul bilanciere.', 'Sei a {cnt} su {goal}: abbastanza per sentirti bravo, troppo poco per sembrarlo.']],
+    lowdone: [['Spunti circa il {pct}% delle serie: qualcuna in più non ti ucciderebbe.'],
+      ['Chiudi solo il {pct}% delle serie: a metà esercizio ti viene sempre un impegno improvviso.', 'Fai il {pct}% delle serie: il resto lo lasci lì, come i buoni propositi.'],
+      ['Fai il {pct}% delle serie: il resto lo salti come salti i pezzi di buon senso davanti al menu.', 'Il {pct}% delle serie completate: il tuo allenamento finisce prima del tuo entusiasmo, cioè presto.']],
+    highdone: [['Fai quasi tutte le serie: costanza apprezzata.'],
+      ['Completi quasi ogni serie: quasi sospetto, controllo che non sia un errore.'],
+      ['Fai tutte le serie: peccato che l\'unica cosa che non finisci mai sia il piatto.']],
+    stuck: [['Il carico di {ex} è fermo a {kg} kg: prova a metterne un po\' di più.'],
+      ['{ex}: {kg} kg da sempre, ormai è più un soprammobile che un esercizio.', 'Su {ex} la progressione l\'hai lasciata a casa, insieme alla voglia: sempre {kg} kg.'],
+      ['{ex}: {kg} kg e i dischi ti vedono arrivare e ridono.', 'Su {ex} sei fermo a {kg} kg: più che un allenamento è una tradizione di famiglia.']],
+    up: [['Su {ex} sei passato da {prev} a {kg} kg: ottimo.'],
+      ['{ex}: da {prev} a {kg} kg. Un miracolo, lo segno per i posteri.'],
+      ['{ex}: da {prev} a {kg} kg. La prova che sai crescere, almeno nei numeri.']],
+    nolifts: [['Non scrivi mai i kg: così è difficile vederli crescere.'],
+      ['Non segni mai i carichi: confusione o paura di quel numero?'],
+      ['Non segni i kg perché sai già che sono ridicoli.']],
+    legs: [['Gambe assenti da un po\': non scordarle.'],
+      ['Gambe? Negli ultimi 14 giorni non pervenute: tutto sopra, niente sotto, come i pantaloncini a metà.', 'Giorno gambe mai visto: sopra sei un busto da vetrina, sotto due fiammiferi.'],
+      ['Gambe zero: sopra sei un busto da vetrina, sotto un culo floscio che resta tale per principio.', 'Le gambe le salti con una costanza che invidio: il culo ti ringrazia restando floscio.']],
+    zone: [['{zone} è rimasta indietro: dagli un po\' di spazio.'],
+      ['{zone}: abbandonata a se stessa come un gatto in vacanza.'],
+      ['{zone}? La schivi con la stessa cura con cui schivi la bilancia.']],
+    streak: [['Sono {st} settimane di fila in obiettivo: continua così.'],
+      ['{st} settimane di fila: chi sei e che ne hai fatto di te.'],
+      ['{st} settimane di fila in obiettivo: quasi quasi sembri una persona seria.']],
+    nobody: [['Non hai ancora inserito il peso: senza non vedo i progressi.'],
+      ['Non ti pesi: la bilancia l\'hai messa in lutto?', 'Il peso non lo inserisci: i numeri non si offendono, ma tu sì.'],
+      ['Non ti pesi: ignorare la bilancia non fa dimagrire, anche se ci provi da anni.', 'Peso non pervenuto: la panza ringrazia per la privacy.']],
+    gainbad: [['Il peso è salito di {d} kg: attenzione alla direzione.'],
+      ['+{d} kg: la panza prende piede e il culo si allarga in silenzio.', '+{d} kg: la bilancia e il tuo culo floscio hanno stretto un patto.'],
+      ['+{d} kg: la panza ha ormai un codice postale e il culo floscio un fan club.', '+{d} kg: tra poco i pantaloni ti denunciano per maltrattamenti.']],
+    gaingood: [['Peso in salita di {d} kg, come da piano.'],
+      ['+{d} kg come da piano: speriamo sia muscolo e non l\'ennesima birra.'],
+      ['+{d} kg: se è muscolo mi tolgo il cappello, se è panza ti tolgo il telecomando.']],
+    lossgood: [['Il peso è sceso di {d} kg: buon segno.'],
+      ['-{d} kg: la panza trema, il culo floscio si sta ancora organizzando.'],
+      ['-{d} kg: la panza ti ha mandato la lettera di dimissioni, il culo floscio ci sta ancora pensando.', '-{d} kg: se continui di questo passo ritrovi persino gli addominali, che ormai davi per dispersi.']],
+    lossbad: [['Il peso è sceso di {d} kg ma volevi salire: ricontrolla il piano.'],
+      ['-{d} kg mentre volevi salire: l\'unica cosa che cresce è la lista delle scuse.'],
+      ['-{d} kg volendo salire: ti sei rimpicciolito invece di crescere, un\'impresa al contrario.']],
+    flat: [['Il peso è fermo a {kg} kg.'],
+      ['Peso fermo a {kg} kg: come i carichi, in perfetta coerenza.'],
+      ['Peso fermo a {kg} kg: la panza ha trovato il suo equilibrio, tu no.']],
+    gap: [['Mancano {gap} kg all\'obiettivo di {goal}: la strada c\'è.'],
+      ['Ti separano {gap} kg dall\'obiettivo di {goal}: sono pochi, ma tu li fai sembrare un trasloco.'],
+      ['{gap} kg all\'obiettivo di {goal}: con questo ritmo ci arrivi per il tuo prossimo compleanno, e forse nemmeno quello.']],
+    close: [['Sei a un passo dall\'obiettivo di {goal} kg: manca poco.'],
+      ['A un passo dai {goal} kg: non rovinare tutto con una pizza di troppo.'],
+      ['Quasi ai {goal} kg: ora l\'unica cosa che ti può fermare sei tu, e il tuo curriculum parla chiaro.']],
+    outA: [['Prossima seduta: {next}. Vai.'],
+      ['Adesso chiudi l\'app e vai: {next} non si allena da solo.'],
+      ['Ora basta leggere: {next} ti aspetta. Alza il culo, magari si fa meno floscio.']],
+    outB: [['Apri una scheda e inizia.'],
+      ['Adesso chiudi l\'app e vai ad allenarti.'],
+      ['Ora basta leggere: alza il culo, magari si fa meno floscio.']]
+  };
+  function seeded(seed) { var h = 1779033703 ^ seed.length; for (var i = 0; i < seed.length; i++) { h = Math.imul(h ^ seed.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); } return function () { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; }
+  function verdictText(level, roll) {
+    var rnd = seeded(dayKey(Date.now()) + '|' + level + '|' + roll), now = Date.now(), h = state.history, st = streakWeeks();
+    function say(key, vars) {
+      var pool = VT[key][level] && VT[key][level].length ? VT[key][level] : VT[key][1], s = pool[Math.floor(rnd() * pool.length)];
+      return s.replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] !== undefined ? vars[k] : m; });
+    }
+    var goal = state.me.perWeek, cnt = weekCount(), dow = (new Date().getDay() + 6) % 7, daysSince = h.length ? Math.floor((now - h[0].t) / DAY_MS) : null;
+    var parts = [];
+    // Apertura
+    if (!h.length) parts.push(say('none'));
+    else if (daysSince >= 10) parts.push(say('gone', { days: daysSince }));
+    else if (cnt >= goal) parts.push(say('goal', { cnt: cnt, goal: goal }));
+    else if (cnt === 0 && dow >= 3) parts.push(say('late', { goal: goal }));
+    else parts.push(say('mid', { cnt: cnt, goal: goal }));
+    var details = [];
+    // Corpo
+    var log = bodyLog(), b = state.body;
+    if (!log.length) details.push([1, say('nobody')]);
+    else {
+      var last = log[log.length - 1], ref = log[0], i;
+      for (i = log.length - 2; i >= 0; i--) if (last.t - log[i].t >= 14 * DAY_MS) { ref = log[i]; break; }
+      var diff = last.kg - ref.kg, ad = fmtKg(Math.abs(diff)), want = b.goalKg ? (b.goalKg < last.kg ? 'lose' : (b.goalKg > last.kg ? 'gain' : 'hold')) : 'lose';
+      if (log.length < 2 || Math.abs(diff) < 0.3) details.push([1, say('flat', { kg: fmtKg(last.kg) })]);
+      else if (diff > 0) details.push([1, say(want === 'gain' ? 'gaingood' : 'gainbad', { d: ad })]);
+      else details.push([1, say(want === 'gain' ? 'lossbad' : 'lossgood', { d: ad })]);
+      if (b.goalKg) { var gp = Math.abs(last.kg - b.goalKg); if (gp <= 1) details.push([6, say('close', { goal: fmtKg(b.goalKg) })]); else details.push([5, say('gap', { gap: fmtKg(gp), goal: fmtKg(b.goalKg) })]); }
+    }
+    // Serie completate
+    var rec5 = h.slice(0, 5).filter(function (x) { return x.total; }), sd = 0, stt = 0;
+    rec5.forEach(function (x) { sd += x.done; stt += x.total; });
+    if (stt) { var pct = Math.round(sd / stt * 100); if (pct < 70) details.push([2, say('lowdone', { pct: pct })]); else if (pct >= 95 && rec5.length >= 2) details.push([4, say('highdone')]); }
+    // Carichi
+    var byEx = {};
+    h.slice().reverse().forEach(function (x) { if (x.lifts) Object.keys(x.lifts).forEach(function (nm) { (byEx[nm] = byEx[nm] || []).push(x.lifts[nm]); }); });
+    var stuck = null, upd = null;
+    Object.keys(byEx).forEach(function (nm) { var a = byEx[nm]; if (a.length < 2) return; var l = a[a.length - 1], p = a[a.length - 2]; if (l <= p && !stuck) stuck = { ex: nm, kg: fmtKg(l) }; else if (l > p && !upd) upd = { ex: nm, prev: fmtKg(p), kg: fmtKg(l) }; });
+    if (stuck) details.push([3, say('stuck', stuck)]);
+    else if (upd) details.push([3, say('up', upd)]);
+    else if (h.length >= 2 && !Object.keys(byEx).length) details.push([3, say('nolifts')]);
+    // Zone
+    var an = analyze();
+    if (an.any && an.sets.gambe === 0 && (an.sets.petto + an.sets.schiena + an.sets.spalle + an.sets.braccia) > 0) details.push([2, say('legs')]);
+    else if (an.flagged.length) details.push([4, say('zone', { zone: macroOf(an.flagged[0]).n.toLowerCase().replace(' e glutei', '') })]);
+    if (st >= 2) details.push([5, say('streak', { st: st })]);
+    details.sort(function (a, c) { return a[0] - c[0]; });
+    details.slice(0, 4).forEach(function (d) { parts.push(d[1]); });
+    // Chiusura
+    var pr = state.program, ws = weekStart(now), nxt = '';
+    if (pr && pr.days.length) pr.days.forEach(function (d, i) { if (!nxt && !(d.last && weekStart(d.last) === ws)) nxt = d.name.toLowerCase(); });
+    parts.push(nxt ? say('outA', { next: nxt }) : say('outB'));
+    return parts.join(' ');
+  }
+  WIDGETS.verdict = { n: 'Il verdetto', d: 'Un paragrafo ironico che commenta i tuoi numeri', w2: true, html: function () {
+    var lv = state.ui.verdictLevel === undefined ? 1 : state.ui.verdictLevel, roll = state.ui.verdictRoll || 0;
+    var h = '<section class="w"><h2>Il verdetto</h2><p class="vtext">' + esc(verdictText(lv, roll)) + '</p><div class="chips">';
+    ['Soft', 'Cattivo', 'Senza freni'].forEach(function (nm, i) { h += '<button type="button" class="chip sm" aria-pressed="' + (lv === i) + '" data-vlevel="' + i + '">' + nm + '</button>'; });
+    return h + '<button type="button" class="chip sm" data-vroll="1">Un altro</button></div><p class="hint">Frasi scritte a mano e scelte in base ai tuoi numeri. Cambiano ogni giorno.</p></section>';
+  } };
+  WIDGETS.body = { n: 'Corpo', d: 'Peso, altezza, età e progressi verso il tuo obiettivo', w2: true, html: function () {
+    var b = state.body, log = bodyLog(), open = state.ui.bodyOpen || '', h = '<section class="w"><h2>Corpo</h2>';
+    if (log.length) {
+      var last = log[log.length - 1], first = log[0], dlt = last.kg - first.kg;
+      h += '<div class="big">' + fmtKg(last.kg) + '<small>kg</small></div><p class="hint">' + (log.length > 1 ? (dlt > 0 ? '+' : (dlt < 0 ? '−' : '')) + fmtKg(Math.abs(dlt)) + ' kg dal ' + esc(fmtDate(first.t)) : 'Prima misura: ' + esc(fmtDate(last.t))) + '</p>';
+      if (log.length > 1) h += sparkSvg(log.slice(-12), b.goalKg);
+      if (b.goalKg) {
+        var span = first.kg - b.goalKg, fr = span === 0 ? 1 : Math.max(0, Math.min(1, (first.kg - last.kg) / span));
+        h += '<div class="bar" style="grid-template-columns:78px 1fr 44px"><span class="bl">Obiettivo ' + fmtKg(b.goalKg) + '</span><span class="bt"><i style="width:' + Math.round(fr * 100) + '%"></i></span><span class="bv">' + Math.round(fr * 100) + '%</span></div>';
+      }
+      var info = [];
+      if (b.height) info.push('Altezza ' + b.height + ' cm');
+      if (b.age) info.push(b.age + ' anni');
+      if (b.height) info.push('IMC ' + fmtKg(last.kg / Math.pow(b.height / 100, 2)).replace(/^/, ''));
+      if (info.length) h += '<p class="hint">' + esc(info.join(' · ')) + '</p>';
+    } else h += '<p class="hint">Aggiungi il peso per vedere i progressi nel tempo.</p>';
+    if (open === 'weight') h += '<div class="saverow"><input type="text" inputmode="decimal" id="bkg" placeholder="kg, es. 78,4" aria-label="Peso in kg" value="' + esc(state.ui.bodyDraft || '') + '"><button type="button" class="pillbtn solid" id="bwsave">Salva</button><button type="button" class="pillbtn" id="bcancel">Annulla</button></div>';
+    else if (open === 'data') h += '<div class="saverow"><input type="text" inputmode="decimal" id="bh" placeholder="altezza cm" aria-label="Altezza in cm" value="' + (b.height || '') + '"><input type="text" inputmode="numeric" id="ba" placeholder="età" aria-label="Età" value="' + (b.age || '') + '"><input type="text" inputmode="decimal" id="bg" placeholder="obiettivo kg" aria-label="Peso obiettivo in kg" value="' + (b.goalKg ? fmtKg(b.goalKg) : '') + '"><button type="button" class="pillbtn solid" id="bdsave">Salva</button><button type="button" class="pillbtn" id="bcancel">Annulla</button></div>';
+    else h += '<div class="rowbtns" style="flex-wrap:wrap"><button type="button" class="pillbtn solid" id="bwadd">Aggiungi peso</button><button type="button" class="pillbtn" id="bdata">Dati e obiettivo</button>' + (log.length ? '<button type="button" class="pillbtn" id="bwdel">Elimina l\'ultima</button>' : '') + '</div>';
+    if (state.ui.bodyErr) h += '<p class="err" role="alert">' + esc(state.ui.bodyErr) + '</p>';
+    return h + '</section>';
+  } };
+
   function haptic(ms) {
     try {
       if (state.ui.haptics === false) return;
@@ -1268,7 +1457,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     var h = '<details class="w w2 more" data-ui="data"' + (state.ui.data ? ' open' : '') + '><summary><b>Dati e app</b><span class="cap">Backup, azzeramento, aggiornamento, vibrazione</span></summary>';
     h += '<div class="subpanel"><h3>Backup</h3><p class="hint">Copia questo testo per spostare schede, piano, storico e carichi su un altro dispositivo.</p><textarea class="bk" id="bktext" readonly aria-label="Backup">' + esc(backupText()) + '</textarea><div class="rowbtns"><button type="button" class="pillbtn solid" id="bkcopy">Copia</button></div><p class="hint">Per ripristinare, incolla un backup qui. Sostituisce schede, piano, storico e carichi di questo dispositivo.</p><textarea class="bk" id="bkin" aria-label="Incolla il backup"></textarea><div class="rowbtns"><button type="button" class="pillbtn" id="bkgo">Ripristina</button></div><p class="err" id="bkmsg" role="status"></p></div>';
     h += '<div class="subpanel"><h3>Azzera</h3><p class="hint">Non si può annullare. Se vuoi conservare qualcosa, fai prima il backup.</p><div class="rowbtns" style="flex-wrap:wrap">' + rbtn('act', 'Azzera attività') + rbtn('plans', 'Cancella schede e piano') + rbtn('all', 'Cancella tutto') + (cr ? '<button type="button" class="pillbtn" data-reset="no">Annulla</button>' : '') + '</div>';
-    h += (cr ? '<p class="hint"><b>' + (cr === 'act' ? 'Cancella storico, calendario, record, carichi e spunte. Schede e piano restano.' : (cr === 'plans' ? 'Cancella le schede salvate, il piano e la scheda in corso. Lo storico resta.' : 'Cancella tutto: storico, schede, piano, carichi, obiettivi, limitazioni e widget.')) + '</b> Tocca ancora per confermare.</p>' : '') + '</div>';
+    h += (cr ? '<p class="hint"><b>' + (cr === 'act' ? 'Cancella storico, calendario, record, carichi e spunte. Schede e piano restano.' : (cr === 'plans' ? 'Cancella le schede salvate, il piano e la scheda in corso. Lo storico resta.' : 'Cancella tutto: storico, schede, piano, carichi, peso e dati personali, obiettivi, limitazioni e widget.')) + '</b> Tocca ancora per confermare.</p>' : '') + '</div>';
     h += '<div class="subpanel"><h3>App</h3><p class="hint">Versione ' + esc(VERSION && VERSION.indexOf('__') !== 0 ? VERSION : 'di sviluppo') + '. Se non vedi le novità, aggiorna: ricarica la pagina saltando la copia salvata.</p><div class="rowbtns" style="flex-wrap:wrap"><button type="button" class="pillbtn solid" id="updnow">Aggiorna ora</button><button type="button" class="pillbtn" id="hapticbtn" aria-pressed="' + (state.ui.haptics !== false) + '">Vibrazione: ' + (state.ui.haptics !== false ? 'sì' : 'no') + '</button></div></div></details>';
     return h;
   }
@@ -1288,6 +1477,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     document.getElementById('app').innerHTML = h;
     var added = state.ui.lastAdded; state.ui.lastAdded = '';
     updateWheel();
+    if (state.ui.bodyOpen === 'weight') { var bf = document.getElementById('bkg'); if (bf) bf.focus(); }
     if (added) { var el = document.querySelector('[data-wid="' + added + '"]'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
   }
 
@@ -1552,6 +1742,27 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     if (state.view === 'me') {
       var meEl;
       if (t.id === 'updnow') { forceUpdate(); return; }
+      var vb;
+      if ((vb = t.closest('[data-vlevel]'))) { state.ui.verdictLevel = parseInt(vb.getAttribute('data-vlevel'), 10); save(); renderMe(); return; }
+      if (t.closest('[data-vroll]')) { state.ui.verdictRoll = (state.ui.verdictRoll || 0) + 1; save(); renderMe(); return; }
+      if (t.id === 'bwadd') { state.ui.bodyOpen = 'weight'; state.ui.bodyErr = ''; state.ui.bodyDraft = ''; renderMe(); return; }
+      if (t.id === 'bdata') { state.ui.bodyOpen = 'data'; state.ui.bodyErr = ''; renderMe(); return; }
+      if (t.id === 'bcancel') { state.ui.bodyOpen = ''; state.ui.bodyErr = ''; state.ui.bodyDraft = ''; renderMe(); return; }
+      if (t.id === 'bwsave') {
+        var raw = document.getElementById('bkg').value, kg = parseNum(raw);
+        if (!(kg >= 30 && kg <= 300)) { state.ui.bodyErr = 'Scrivi un peso tra 30 e 300 kg.'; state.ui.bodyDraft = raw; renderMe(); return; }
+        var nowT = Date.now(), dk = dayKey(nowT), L = state.body.log.filter(function (x) { return dayKey(x.t) !== dk; });
+        L.push({ t: nowT, kg: Math.round(kg * 10) / 10 }); state.body.log = L.sort(function (a, c) { return a.t - c.t; }).slice(-400);
+        state.ui.bodyOpen = ''; state.ui.bodyErr = ''; state.ui.bodyDraft = ''; save(); renderMe(); return;
+      }
+      if (t.id === 'bdsave') {
+        var hv = document.getElementById('bh').value.trim(), av = document.getElementById('ba').value.trim(), gv = document.getElementById('bg').value.trim();
+        var hh = hv ? parseNum(hv) : null, aa = av ? parseNum(av) : null, gg = gv ? parseNum(gv) : null;
+        if ((hh !== null && !(hh >= 100 && hh <= 250)) || (aa !== null && !(aa >= 10 && aa <= 99)) || (gg !== null && !(gg >= 30 && gg <= 300))) { state.ui.bodyErr = 'Controlla i valori: altezza 100-250 cm, età 10-99, obiettivo 30-300 kg.'; renderMe(); return; }
+        state.body.height = hh === null ? null : Math.round(hh); state.body.age = aa === null ? null : Math.round(aa); state.body.goalKg = gg === null ? null : Math.round(gg * 10) / 10;
+        state.ui.bodyOpen = ''; state.ui.bodyErr = ''; save(); renderMe(); return;
+      }
+      if (t.id === 'bwdel') { var SL = bodyLog(); SL.pop(); state.body.log = SL; save(); renderMe(); return; }
       if (t.id === 'hapticbtn') { state.ui.haptics = state.ui.haptics === false; save(); if (state.ui.haptics !== false) haptic(25); renderMe(); return; }
       if (t.closest('#wedit') || t.closest('#wedit2')) { state.ui.wedit = true; save(); renderMe(); document.getElementById('scroll').scrollTop = 0; return; }
       if (t.id === 'wdone') { state.ui.wedit = false; save(); renderMe(); document.getElementById('scroll').scrollTop = 0; return; }
@@ -1576,7 +1787,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
           state.saved = []; state.program = null; state.plan = null; state.done = {}; state.extra = {}; state.opt = {}; state.info = {};
           state.ui.flash = 'Schede e piano cancellati.';
         } else {
-          state.history = []; state.kg = {}; state.done = {}; state.extra = {}; state.opt = {}; state.info = {}; state.saved = []; state.program = null; state.plan = null; state.me = {}; migrateMe();
+          state.history = []; state.kg = {}; state.done = {}; state.extra = {}; state.opt = {}; state.info = {}; state.saved = []; state.program = null; state.plan = null; state.me = {}; migrateMe(); state.body = {}; migrateBody();
           state.ui = { flash: 'Tutto cancellato.' }; resetForm();
         }
         save(); renderMe(); document.getElementById('scroll').scrollTop = 0; return;
