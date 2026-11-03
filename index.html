@@ -90,7 +90,17 @@ body.plan .w-disc { color: var(--orange); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { min-height: 44px; padding: 0 17px; border-radius: 99px; border: 2px solid var(--fg); background: transparent; font-weight: 700; white-space: nowrap; }
 .chip[aria-pressed="true"] { background: var(--fg); color: var(--on-dark); }
-.chip.sug { border-style: dashed; }
+.chip.sm { min-height: 38px; padding: 0 13px; font-size: .9rem; }
+.subrow { display: flex; flex-direction: column; gap: 8px; padding: 10px 0 2px 14px; border-left: 2px solid var(--fg); }
+.more { border-top: 1px solid var(--hair); padding: 14px 0 6px; }
+.more summary { display: flex; flex-direction: column; gap: 2px; cursor: pointer; list-style: none; position: relative; padding-right: 36px; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary b { font-size: 1.2rem; font-weight: 800; letter-spacing: -.02em; }
+.more summary::after { content: ''; position: absolute; right: 8px; top: 8px; width: 10px; height: 10px; border-right: 2.5px solid var(--fg); border-bottom: 2.5px solid var(--fg); transform: rotate(45deg); transition: transform .2s; }
+.more[open] summary::after { transform: rotate(-135deg); top: 14px; }
+.subpanel { display: flex; flex-direction: column; gap: 10px; padding: 16px 0 6px; }
+.subpanel h3 { margin: 0; font-size: 1rem; font-weight: 800; letter-spacing: -.01em; }
+.subpanel .hint { margin: -4px 0 0; color: var(--sub); font-size: .9rem; font-weight: 500; }
 .chip:disabled { cursor: default; }
 .chip:disabled[aria-pressed="false"] { opacity: .4; }
 .times { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -514,9 +524,46 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     resistenza: { n: 'Cardio e resistenza', d: 'Superserie leggere, molte ripetizioni, recuperi corti e 15 minuti di cardio.', style: 'ss', big: '15-20', iso: '15-20', restSS: 30, restBig: 30, restIso: 30, cardio: 15, groups: ['quadricipiti', 'petto', 'schiena', 'addome'], note: '' },
     recupero: { n: 'Recupero attivo', d: 'Seduta leggera: 2 serie, carichi bassi, movimento fluido.', style: 'ss', big: '12-15', iso: '12-15', sets: 2, restSS: 30, restBig: 30, restIso: 30, cardio: 0, groups: ['schiena', 'glutei', 'spalle', 'addome'], note: 'Il movimento leggero favorisce circolazione e recupero. Le scorie le smaltiscono fegato e reni, non l\'allenamento.' }
   };
-  var EMPH = { bal: 'Equilibrata', up: 'Parte alta', low: 'Gambe e glutei' };
-  var UPPER = ['petto', 'schiena', 'spalle', 'bicipiti', 'tricipiti'];
-  var LOWER = ['quadricipiti', 'femorali', 'glutei', 'polpacci'];
+  // Macro zone che l'utente vede. Il dettaglio (subs) compare solo dopo aver scelto la zona.
+  var MACROS = [
+    { id: 'petto', n: 'Petto', groups: ['petto'] },
+    { id: 'schiena', n: 'Schiena', groups: ['schiena'] },
+    { id: 'spalle', n: 'Spalle', groups: ['spalle'] },
+    { id: 'braccia', n: 'Braccia', groups: ['bicipiti', 'tricipiti'] },
+    { id: 'gambe', n: 'Gambe e glutei', groups: ['quadricipiti', 'femorali', 'glutei', 'polpacci'] },
+    { id: 'addome', n: 'Addome', groups: ['addome'] }
+  ];
+  var AREAS = {
+    all: { n: 'Tutto il corpo', d: 'Petto, schiena, spalle, braccia, gambe e glutei.', macros: ['petto', 'schiena', 'spalle', 'braccia', 'gambe'] },
+    up: { n: 'Parte alta', d: 'Petto, schiena, spalle e braccia.', macros: ['petto', 'schiena', 'spalle', 'braccia'] },
+    low: { n: 'Parte bassa', d: 'Gambe e glutei.', macros: ['gambe'] },
+    custom: { n: 'Scelgo io', d: 'Scegli i muscoli. Dove c\'è il dettaglio puoi restringere.', macros: [] }
+  };
+  function macroOf(id) { for (var i = 0; i < MACROS.length; i++) if (MACROS[i].id === id) return MACROS[i]; return null; }
+  function effGroups(f) {
+    var out = [];
+    if (f.area === 'custom') {
+      MACROS.forEach(function (m) {
+        if (f.macros.indexOf(m.id) < 0) return;
+        var sub = f.sub[m.id];
+        m.groups.forEach(function (g) { if (!sub || sub.indexOf(g) >= 0) out.push(g); });
+      });
+    } else if (AREAS[f.area]) {
+      MACROS.forEach(function (m) { if (AREAS[f.area].macros.indexOf(m.id) >= 0) m.groups.forEach(function (g) { out.push(g); }); });
+    }
+    return out;
+  }
+  function macroCount(f) { return f.area === 'custom' ? f.macros.length : (AREAS[f.area] ? AREAS[f.area].macros.length : 0); }
+  function planTitle(f) {
+    if (f.area !== 'custom' && AREAS[f.area]) return AREAS[f.area].n;
+    var parts = [];
+    MACROS.forEach(function (m) {
+      if (f.macros.indexOf(m.id) < 0) return;
+      var sub = f.sub[m.id];
+      if (sub && sub.length < m.groups.length) sub.forEach(function (g) { parts.push(gname(g)); }); else parts.push(m.n);
+    });
+    return parts.join(' · ');
+  }
   var CARDIO_OPTS = [
     o('Tapis roulant: camminata veloce o corsa leggera', 'Ritmo a cui riesci a parlare a frasi corte.', 'g'),
     o('Cyclette o bici', 'Resistenza media, cadenza costante.', 'g'),
@@ -526,9 +573,8 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     o('Jumping jack e skip sul posto', 'Intervalli da 30 secondi con 30 di pausa.', 'c')
   ];
 
-  function generate(f) {
+  function generate(f, sel, title) {
     var prof = PROFILES[f.profile] || null;
-    var sel = f.groups.length ? f.groups : (prof ? prof.groups : []);
     var sets = (prof && prof.sets) || ({ p: 2, i: 3, a: 4 }[f.level] || 3);
     var repsBig = (prof && prof.big) || ({ p: '12-15', i: '8-12', a: '6-10' }[f.level] || '8-12');
     var repsIso = (prof && prof.iso) || ({ p: '12-15', i: '10-15', a: '10-15' }[f.level] || '10-15');
@@ -536,7 +582,8 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     var sup = style === 'ss';
     var restSS = prof ? prof.restSS : 70, restBig = prof ? prof.restBig : 90, restIso = prof ? prof.restIso : 60;
     var cardio = prof ? prof.cardio : 0;
-    var unit = sup ? sets * (0.75 + restSS / 120) : sets * (0.75 + (restBig + restIso) / 120);
+    function unitFor(n) { return sup ? n * (0.75 + restSS / 120) : n * (0.75 + (restBig + restIso) / 120); }
+    var unit = unitFor(sets);
     var avail = f.time - 5 - cardio;
 
     var skipped = [], gs = [], per = [];
@@ -548,10 +595,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
 
     var picked = [];
     gs.forEach(function (g, i) { picked.push({ g: g, slot: per[i][0] }); });
-    var emphSet = f.emph === 'up' ? UPPER : (f.emph === 'low' ? LOWER : []);
-    var order = gs.map(function (g, i) { return i; }).sort(function (x, y) {
-      return (emphSet.indexOf(gs[y]) >= 0 ? 1 : 0) - (emphSet.indexOf(gs[x]) >= 0 ? 1 : 0);
-    });
+    var order = gs.map(function (g, i) { return i; });
     var stop = false;
     for (var r = 1; r < 3 && !stop; r++) {
       for (var oi = 0; oi < order.length && !stop; oi++) {
@@ -560,6 +604,12 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
         if (picked.length >= 12 || (picked.length + 1) * unit > avail) { stop = true; break; }
         picked.push({ g: gs[gi], slot: per[gi][r] });
       }
+    }
+    if (!stop && !(prof && prof.sets)) {
+      // Pochi muscoli e tanto tempo: aggiungo serie (fino a 5) invece di muscoli che non hai scelto.
+      var maxSets = Math.min(5, sets + 2);
+      while (sets < maxSets && picked.length * unitFor(sets + 1) <= avail + 4) sets++;
+      unit = unitFor(sets);
     }
     picked.sort(function (a, b) { return (b.slot.big ? 1 : 0) - (a.slot.big ? 1 : 0); });
 
@@ -605,20 +655,24 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     minutes = Math.round(minutes / 5) * 5;
     var notes = [];
     if (prof && prof.note) notes.push(prof.note);
-    if (minutes > f.time + 4) notes.push('Con ' + gs.length + ' gruppi la scheda dura circa ' + minutes + ' minuti, più dei ' + f.time + ' scelti. Togli un gruppo o allunga il tempo.');
+    if (minutes > f.time + 4) notes.push('Con questa scelta la scheda dura circa ' + minutes + ' minuti, più dei ' + f.time + ' scelti. Riduci i muscoli o allunga il tempo.');
+    if (minutes < f.time - 9) notes.push('La scheda dura circa ' + minutes + ' minuti: con questi muscoli non c\'è altro da aggiungere. Per riempire i ' + f.time + ' minuti aggiungi un muscolo.');
     if (skipped.length) notes.push('Senza ' + EQUIP[f.eq].toLowerCase() + ' non ho esercizi per: ' + skipped.join(', ') + '.');
     var metaParts = [minutes + ' min circa'];
     if (prof) metaParts.push(prof.n);
     metaParts.push(STYLES[style], EQUIP[f.eq], LEVELS[f.level]);
-    return { plan: { minutes: minutes, title: gs.map(gname).join(' · '), meta: metaParts.join(' · '), note: notes.join(' '), blocks: blocks } };
+    return { plan: { minutes: minutes, title: title, meta: metaParts.join(' · '), note: notes.join(' '), blocks: blocks } };
   }
 
   // ---------- Stato ----------
   var KEY = 'scheda-superserie-v2';
-  var state = { view: 'setup', form: { groups: [], time: 60, style: 'ss', eq: 'g', level: 'i', profile: '', emph: 'bal', touched: {} }, plan: null, opt: {}, done: {}, kg: {}, extra: {}, info: {} };
+  var state = { view: 'setup', form: { area: '', macros: [], sub: {}, time: 60, style: 'ss', eq: 'g', level: 'i', profile: '', touched: {} }, plan: null, opt: {}, done: {}, kg: {}, extra: {}, info: {}, ui: {} };
   try { var raw = localStorage.getItem(KEY); if (raw) { var pp = JSON.parse(raw); for (var kk in pp) state[kk] = pp[kk]; } } catch (e) {}
   if (state.view === 'plan' && !state.plan) state.view = 'setup';
-  if (!state.form.emph) state.form.emph = 'bal';
+  if (typeof state.form.area !== 'string') state.form.area = '';
+  if (!Array.isArray(state.form.macros)) state.form.macros = [];
+  if (!state.form.sub || typeof state.form.sub !== 'object') state.form.sub = {};
+  if (!state.ui) state.ui = {};
   if (!state.form.touched) state.form.touched = {};
   if (typeof state.form.profile !== 'string') state.form.profile = '';
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
@@ -647,37 +701,58 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     Object.keys(obj).forEach(function (k) { h += chip(obj[k], cur === k, attr, k, '', locked); });
     return h + '</div>';
   }
-  function setupSteps() {
-    var f = state.form, prof = PROFILES[f.profile] || null, t = f.touched || {};
-    var lvLock = prof && prof.sets && prof.big;
-    var done = [!!(f.groups.length || prof), !!t.time, !!(t.style || (prof && prof.style)), !!t.eq, !!(t.level || lvLock)];
-    return done.filter(Boolean).length;
-  }
+  function setupSteps() { var f = state.form; return (effGroups(f).length ? 1 : 0) + (f.touched && f.touched.time ? 1 : 0); }
   function renderSetup(err) {
     document.body.className = 'setup'; setThemeColor('#e45a38');
     document.getElementById('timerbar').hidden = true;
     var f = state.form, h = '';
     var prof = PROFILES[f.profile] || null;
-    h += '<section class="panel"><h2>Obiettivo <span class="cap">facoltativo</span></h2><p class="hint">' + (prof ? esc(prof.d) : 'Scegli un profilo e la scheda si adatta: ripetizioni, recuperi, cardio. Se lo salti, la scheda è quella standard.') + '</p><div class="chips">';
-    Object.keys(PROFILES).forEach(function (k) { h += chip(PROFILES[k].n, f.profile === k, 'data-prof', k); });
-    h += '</div></section>';
-    h += '<section class="panel"><h2>Enfasi <span class="cap">facoltativa</span></h2><p class="hint">Se hai poco tempo, i gruppi scelti qui ricevono più esercizi.</p>' + seg(EMPH, f.emph, 'data-emph') + '</section>';
-    h += '<section class="panel"><h2>Gruppi muscolari</h2><p class="hint">Scegline quanti vuoi. Con meno tempo, meno gruppi.' + (prof ? ' Se non ne scegli, uso quelli tratteggiati, suggeriti dall\'obiettivo.' : '') + '</p><div class="chips">';
-    GROUPS.forEach(function (g) { var on = f.groups.indexOf(g.id) >= 0; var sug = !f.groups.length && prof && prof.groups.indexOf(g.id) >= 0; h += chip(g.n, on, 'data-g', g.id, sug ? 'sug' : ''); });
-    h += '</div></section>';
-    h += '<section class="panel"><h2>Tempo</h2><p class="hint">Minuti totali, riscaldamento compreso.</p><div class="times">';
+
+    // 1. Cosa alleni
+    h += '<section class="panel"><h2>Cosa alleni?</h2><div class="chips">';
+    ['all', 'up', 'low', 'custom'].forEach(function (k) { h += chip(AREAS[k].n, f.area === k, 'data-area', k); });
+    h += '</div>';
+    h += '<p class="hint">' + (f.area ? esc(AREAS[f.area].d) : 'Scegli una zona e la scheda è pronta, oppure scegli tu i muscoli.') + '</p>';
+    if (f.area === 'custom') {
+      h += '<div class="chips">';
+      MACROS.forEach(function (m) { h += chip(m.n, f.macros.indexOf(m.id) >= 0, 'data-macro', m.id); });
+      h += '</div>';
+      MACROS.forEach(function (m) {
+        if (m.groups.length < 2 || f.macros.indexOf(m.id) < 0) return;
+        var cur = f.sub[m.id] || m.groups;
+        h += '<div class="subrow"><span class="cap">' + esc(m.n) + ': dettaglio</span><div class="chips">';
+        m.groups.forEach(function (g) { h += chip(gname(g), cur.indexOf(g) >= 0, 'data-sub', m.id + '|' + g, 'sm'); });
+        h += '</div></div>';
+      });
+    }
+    h += '</section>';
+
+    // 2. Tempo
+    h += '<section class="panel"><h2>Quanto tempo hai?</h2><div class="times">';
     TIMES.forEach(function (t) { h += '<button type="button" class="tbtn" aria-pressed="' + (f.time === t) + '" data-time="' + t + '" aria-label="' + t + ' minuti">' + t + '</button>'; });
-    h += '</div></section>';
-    var forced = prof && prof.style;
-    h += '<section class="panel"><h2>Stile</h2><p class="hint">' + (forced ? 'Fissato dall\'obiettivo ' + esc(prof.n) + ': ' + STYLES[forced].toLowerCase() + '.' : 'Le superserie alternano due esercizi senza pause lunghe e tengono alti i battiti.') + '</p>' + seg(STYLES, forced || f.style, 'data-style', !!forced) + '</section>';
-    h += '<section class="panel"><h2>Attrezzatura</h2>' + seg(EQUIP, f.eq, 'data-eq') + '</section>';
-    var lvLock = prof && prof.sets && prof.big;
-    var lvHint = lvLock ? 'Fissato dall\'obiettivo ' + esc(prof.n) + ': serie e ripetizioni sono già impostate.' : (prof && prof.big ? 'Cambia il numero di serie. Le ripetizioni le fissa l\'obiettivo.' : 'Cambia il numero di serie e le ripetizioni.');
-    h += '<section class="panel"><h2>Livello</h2><p class="hint">' + lvHint + '</p>' + seg(LEVELS, f.level, 'data-level', !!lvLock) + '</section>';
+    h += '</div><p class="hint">Minuti totali, riscaldamento compreso.</p></section>';
+
+    // 3. Obiettivo
+    h += '<section class="panel"><h2>Obiettivo <span class="cap">facoltativo</span></h2><div class="chips">';
+    Object.keys(PROFILES).forEach(function (k) { h += chip(PROFILES[k].n, f.profile === k, 'data-prof', k); });
+    h += '</div><p class="hint">' + (prof ? esc(prof.d) : 'Cambia ripetizioni, recuperi e cardio. Se lo salti, la scheda è quella standard.') + '</p></section>';
+
+    // Crea
     h += '<div class="cta-row"><button type="button" class="primary" data-go="1">Crea la<br>scheda</button><div class="cta-side"><p class="err" id="err" role="alert">' + (err ? esc(err) : '') + '</p>';
     if (state.plan) h += '<button type="button" class="textbtn" data-back="1">Torna alla scheda in corso: ' + esc(state.plan.title) + '</button>';
     h += '</div></div>';
-    h += '<section class="panel" style="margin-top:14px"><h2>Schede pronte</h2><p class="hint">Non seguono le scelte qui sopra.</p><div class="presets">';
+
+    // Altre impostazioni (chiuse di default)
+    var forced = prof && prof.style, lvLock = prof && prof.sets && prof.big;
+    var summary = [STYLES[forced || f.style], EQUIP[f.eq], LEVELS[f.level]].join(' · ');
+    h += '<details class="more"' + (state.ui.more ? ' open' : '') + '><summary><b>Altre impostazioni</b><span class="cap">' + esc(summary) + '</span></summary>';
+    h += '<div class="subpanel"><h3>Stile</h3><p class="hint">' + (forced ? 'Fissato dall\'obiettivo ' + esc(prof.n) + '.' : 'Le superserie alternano due esercizi e tengono alti i battiti.') + '</p>' + seg(STYLES, forced || f.style, 'data-style', !!forced) + '</div>';
+    h += '<div class="subpanel"><h3>Attrezzatura</h3>' + seg(EQUIP, f.eq, 'data-eq') + '</div>';
+    var lvHint = lvLock ? 'Fissato dall\'obiettivo ' + esc(prof.n) + '.' : (prof && prof.big ? 'Cambia il numero di serie.' : 'Cambia serie e ripetizioni.');
+    h += '<div class="subpanel"><h3>Livello</h3><p class="hint">' + lvHint + '</p>' + seg(LEVELS, f.level, 'data-level', !!lvLock) + '</div></details>';
+
+    // Schede pronte
+    h += '<section class="panel" style="margin-top:14px"><h2>Schede pronte</h2><p class="hint">Ignorano le scelte qui sopra.</p><div class="presets">';
     SESSIONS.forEach(function (s, i) { h += '<button type="button" class="preset" data-preset="' + i + '"><span><b>' + esc(s.sub) + '</b><span class="cap" style="display:block">Superserie, gambe a parte, circa 60 min</span></span><span class="go" aria-hidden="true">&rarr;</span></button>'; });
     h += '</div></section>';
     document.getElementById('app').innerHTML = h;
@@ -749,8 +824,8 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
       var t = planTotals(); pct = t.total ? Math.round(t.done / t.total * 100) : 0;
       num = t.done; cap = '/ ' + t.total + ' serie'; sat = planMinutes(state.plan); meta = t.done + ' / ' + t.total + ' serie';
     } else {
-      var n = setupSteps(), prof = PROFILES[state.form.profile] || null; pct = Math.round(n / 5 * 100);
-      num = state.form.groups.length || (prof ? prof.groups.length : 0); cap = num === 1 ? 'gruppo' : 'gruppi'; sat = state.form.time; meta = n + ' / 5 scelte';
+      var n = setupSteps(); pct = Math.round(n / 2 * 100);
+      num = macroCount(state.form); cap = num === 1 ? 'zona' : 'zone'; sat = state.form.time; meta = n + ' / 2 scelte';
     }
     slot.querySelector('.w-num').textContent = num;
     slot.querySelector('.w-cap').textContent = cap;
@@ -786,20 +861,29 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   document.getElementById('app').addEventListener('click', function (e) {
     var t = e.target, el;
     if (state.view === 'setup') {
-      if ((el = t.closest('[data-g]'))) {
-        var g = el.getAttribute('data-g'), ix = state.form.groups.indexOf(g);
-        if (ix >= 0) state.form.groups.splice(ix, 1); else state.form.groups.push(g);
+      if ((el = t.closest('[data-area]'))) { state.form.area = el.getAttribute('data-area'); save(); renderSetup(); return; }
+      if ((el = t.closest('[data-macro]'))) {
+        var mid = el.getAttribute('data-macro'), mi = state.form.macros.indexOf(mid);
+        if (mi >= 0) { state.form.macros.splice(mi, 1); delete state.form.sub[mid]; } else state.form.macros.push(mid);
+        save(); renderSetup(); return;
+      }
+      if ((el = t.closest('[data-sub]'))) {
+        var pr = el.getAttribute('data-sub').split('|'), mac = macroOf(pr[0]);
+        var cur2 = (state.form.sub[pr[0]] || mac.groups).slice(), ci = cur2.indexOf(pr[1]);
+        if (ci >= 0) { if (cur2.length > 1) cur2.splice(ci, 1); } else cur2.push(pr[1]);
+        cur2 = mac.groups.filter(function (g) { return cur2.indexOf(g) >= 0; });
+        if (cur2.length === mac.groups.length) delete state.form.sub[pr[0]]; else state.form.sub[pr[0]] = cur2;
         save(); renderSetup(); return;
       }
       if ((el = t.closest('[data-time]'))) { state.form.time = parseInt(el.getAttribute('data-time'), 10); state.form.touched.time = 1; save(); renderSetup(); return; }
       if ((el = t.closest('[data-prof]'))) { var pk = el.getAttribute('data-prof'); state.form.profile = state.form.profile === pk ? '' : pk; save(); renderSetup(); return; }
-      if ((el = t.closest('[data-emph]'))) { state.form.emph = el.getAttribute('data-emph'); save(); renderSetup(); return; }
       if ((el = t.closest('[data-style]'))) { state.form.style = el.getAttribute('data-style'); state.form.touched.style = 1; save(); renderSetup(); return; }
       if ((el = t.closest('[data-eq]'))) { state.form.eq = el.getAttribute('data-eq'); state.form.touched.eq = 1; save(); renderSetup(); return; }
       if ((el = t.closest('[data-level]'))) { state.form.level = el.getAttribute('data-level'); state.form.touched.level = 1; save(); renderSetup(); return; }
       if (t.closest('[data-go]')) {
-        if (!state.form.groups.length && !state.form.profile) { renderSetup('Scegli almeno un gruppo muscolare o un obiettivo.'); return; }
-        var res = generate(state.form);
+        var sel = effGroups(state.form);
+        if (!sel.length) { renderSetup(state.form.area === 'custom' ? 'Scegli almeno un muscolo.' : 'Scegli cosa alleni.'); return; }
+        var res = generate(state.form, sel, planTitle(state.form));
         if (res.error) { renderSetup(res.error); return; }
         state.plan = res.plan; state.view = 'plan'; save(); render(); document.getElementById('scroll').scrollTop = 0; return;
       }
@@ -834,6 +918,9 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
       state.info[ex.id] = !state.info[ex.id]; save(); rerenderBlocks();
     }
   });
+  document.getElementById('app').addEventListener('toggle', function (e) {
+    if (e.target && e.target.classList && e.target.classList.contains('more')) { state.ui.more = e.target.open; save(); }
+  }, true);
   document.getElementById('app').addEventListener('change', function (e) {
     if (state.view !== 'plan') return;
     var card = e.target.closest('[data-ex]'); if (!card) return;
