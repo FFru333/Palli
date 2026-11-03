@@ -30,14 +30,29 @@ body.setup { --bg: var(--orange); --fg: var(--black); --sub: #2b0e06; --hair: rg
 body.plan  { --bg: var(--beige);  --fg: var(--black); --sub: #57534a; --hair: rgba(13,13,13,.28); --accent: var(--red);   --accent-ink: #ffffff; }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 17px; line-height: 1.4; padding-bottom: 32px; }
-body.has-timer { padding-bottom: 104px; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 17px; line-height: 1.4; height: 100%; overflow: hidden; }
+.shell { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+body.has-timer .scroll { padding-bottom: 104px; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
-.wrap { max-width: 560px; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 0; }
-header.top { padding-bottom: 4px; }
-header.top h1 { font-weight: 800; font-size: clamp(2.8rem, 15vw, 3.8rem); line-height: .9; letter-spacing: -.05em; margin: 0; text-transform: uppercase; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 14px 20px 28px; display: flex; flex-direction: column; gap: 0; }
+.scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.stage { flex: none; background: var(--bg); border-bottom: 1px solid var(--hair); padding-top: env(safe-area-inset-top); }
+.stage-in { max-width: 560px; margin: 0 auto; padding: 10px 20px 0; }
+.stage-bar { display: flex; align-items: center; gap: 12px; }
+.stage-bar h1 { font-weight: 800; font-size: clamp(2.2rem, 11vw, 3rem); line-height: .9; letter-spacing: -.05em; margin: 0; text-transform: uppercase; }
+.stage .meta { display: none; margin-left: auto; text-align: right; font-size: .95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stage.hidden .meta { display: block; }
+.stage-toggle { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; display: grid; place-items: center; padding: 0; flex: none; margin-left: auto; }
+.stage.hidden .stage-toggle { margin-left: 0; }
+.stage-toggle svg { transition: transform .25s ease; }
+.stage.hidden .stage-toggle svg { transform: rotate(180deg); }
+.wheel-collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .25s ease; }
+.wheel-collapse > div { overflow: hidden; min-height: 0; }
+.stage.hidden .wheel-collapse { grid-template-rows: 0fr; }
+.stage:not(.hidden) .stage-bar { padding-bottom: 0; }
+.stage.hidden .stage-in { padding-bottom: 8px; }
 #app { display: flex; flex-direction: column; }
 .nojs { border-top: 1px solid var(--hair); padding: 18px 0; font-size: 1.05rem; }
 .nojs p { margin: 8px 0 0; max-width: 40ch; }
@@ -47,7 +62,7 @@ header.top h1 { font-weight: 800; font-size: clamp(2.8rem, 15vw, 3.8rem); line-h
 :root { --arc: var(--black); }
 body.plan { --arc: var(--red); }
 .wheel { position: relative; aspect-ratio: 1; }
-.wheel.lg { width: min(100%, 300px); margin: 14px auto 18px; }
+.wheel.lg { width: min(100%, 300px, 30dvh); margin: 4px auto 12px; }
 .wheel.sm { width: 56px; flex: none; }
 .wheel svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .wheel .w-track { fill: none; stroke: var(--fg); stroke-opacity: .2; stroke-width: 10; }
@@ -56,25 +71,14 @@ body.plan { --arc: var(--red); }
 body.setup .w-disc { color: var(--orange); }
 .w-num { font-weight: 800; letter-spacing: -.06em; line-height: .85; font-variant-numeric: tabular-nums; }
 .w-cap { font-weight: 500; }
-.wheel.lg .w-num { font-size: clamp(4.6rem, 26vw, 6.4rem); }
-.wheel.lg .w-cap { font-size: 1rem; margin-top: 8px; }
+.wheel.lg .w-num { font-size: clamp(3rem, 14dvh, 6.4rem); }
+.wheel.lg .w-disc { padding-bottom: 14%; }
+.wheel.lg .w-cap { font-size: .95rem; margin-top: 6px; }
 .wheel.sm .w-num { font-size: 1.15rem; letter-spacing: -.04em; line-height: 1; }
 .wheel.sm .w-cap { display: none; }
 .w-sat { position: absolute; width: 30%; aspect-ratio: 1; left: 9%; bottom: 5%; border-radius: 50%; background: var(--bg); color: var(--black); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
 .w-sat b { font-size: 1.8rem; font-weight: 800; letter-spacing: -.04em; }
 .w-sat span { font-size: .78rem; font-weight: 600; margin-top: 2px; }
-
-/* dock: compact wheel fixed at the top while the page scrolls underneath */
-.dock { position: fixed; top: 0; left: 0; right: 0; z-index: 8; background: var(--bg); border-bottom: 1px solid var(--hair); padding: calc(8px + env(safe-area-inset-top)) 20px 8px; transform: translateY(-110%); transition: transform .25s ease; }
-.dock.on { transform: translateY(0); }
-.dock-in { max-width: 560px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
-.dock .brand { font-weight: 800; font-size: 1.5rem; letter-spacing: -.05em; line-height: 1; text-transform: uppercase; }
-.dock .meta { font-size: .9rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-left: auto; text-align: right; }
-.dock .meta span { display: block; font-weight: 500; color: var(--sub); font-size: .78rem; }
-.dock-toggle { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; display: grid; place-items: center; padding: 0; flex: none; }
-.pull { position: fixed; top: 0; left: 50%; transform: translate(-50%, -100%); z-index: 8; width: 84px; height: 30px; border: 0; border-radius: 0 0 16px 16px; background: var(--fg); color: var(--bg); display: grid; place-items: center; padding: 0; margin-top: env(safe-area-inset-top); transition: transform .25s ease; }
-.pull.on { transform: translate(-50%, 0); }
-html { scroll-padding-top: 90px; }
 
 /* setup */
 .panel { border-top: 1px solid var(--hair); padding: 16px 0 22px; display: flex; flex-direction: column; gap: 12px; }
@@ -145,31 +149,30 @@ html { scroll-padding-top: 90px; }
 .timer .stop { margin-left: auto; background: var(--red); border-color: var(--red); color: #fff; font-size: .8rem; }
 body.setup footer { display: none; }
 footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22px; border-top: 1px solid var(--hair); margin-top: 18px; }
-@media (prefers-reduced-motion: reduce) { .wheel .w-fill, .dock, .pull { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .wheel .w-fill, .wheel-collapse, .stage-toggle svg { transition: none; } }
 </style>
 </head>
 <body class="setup">
-<div class="wrap">
-  <header class="top">
-    <h1 id="h1">PALLI</h1>
-  </header>
-  <div id="app"><div class="nojs"><b>Questa anteprima non esegue gli script.</b><p>La scheda funziona solo aprendo il file in un browser: salva il file, poi aprilo con Safari o Chrome. Se è online, apri il link nel browser invece che nell'anteprima di un'app di messaggi o di file.</p></div></div>
-  <footer>Le spunte e i carichi restano salvati solo su questo browser, per chi apre la pagina.</footer>
-</div>
-
-<div class="dock" id="dock" aria-hidden="true">
-  <div class="dock-in">
-    <div id="dockwheel"></div>
-    <span class="brand">Palli</span>
-    <div class="meta" id="dockmeta"></div>
-    <button type="button" class="dock-toggle" id="dockhide" aria-label="Nascondi il cerchio" tabindex="-1">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 9 5.5l6 6"/></svg>
-    </button>
+<div class="shell">
+  <div class="stage" id="stage">
+    <div class="stage-in">
+      <div class="stage-bar">
+        <h1 id="h1">PALLI</h1>
+        <div class="meta" id="stagemeta"></div>
+        <button type="button" class="stage-toggle" id="stagetoggle" aria-expanded="true" aria-label="Nascondi il cerchio">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 9 5.5l6 6"/></svg>
+        </button>
+      </div>
+      <div class="wheel-collapse"><div id="wheelslot"></div></div>
+    </div>
+  </div>
+  <div class="scroll" id="scroll">
+    <div class="wrap">
+      <div id="app"><div class="nojs"><b>Questa anteprima non esegue gli script.</b><p>La scheda funziona solo aprendo il file in un browser: salva il file, poi aprilo con Safari o Chrome. Se è online, apri il link nel browser invece che nell'anteprima di un'app di messaggi o di file.</p></div></div>
+      <footer>Le spunte e i carichi restano salvati solo su questo browser, per chi apre la pagina.</footer>
+    </div>
   </div>
 </div>
-<button type="button" class="pull" id="pull" aria-label="Mostra il cerchio" tabindex="-1">
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5 9 12.5l6-6"/></svg>
-</button>
 
 <div class="timer" id="timerbar" role="region" aria-label="Timer di recupero" hidden>
   <div class="timer-in">
@@ -651,8 +654,6 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     document.getElementById('timerbar').hidden = true;
     var f = state.form, h = '';
     var prof = PROFILES[f.profile] || null;
-    var cnt = f.groups.length || (prof ? prof.groups.length : 0);
-    h += wheelHtml('lg', cnt, cnt === 1 ? 'gruppo' : 'gruppi', f.time, 'min');
     h += '<section class="panel"><h2>Obiettivo <span class="cap">facoltativo</span></h2><p class="hint">' + (prof ? esc(prof.d) : 'Scegli un profilo e la scheda si adatta: ripetizioni, recuperi, cardio. Se lo salti, la scheda è quella standard.') + '</p><div class="chips">';
     Object.keys(PROFILES).forEach(function (k) { h += chip(PROFILES[k].n, f.profile === k, 'data-prof', k); });
     h += '</div></section>';
@@ -716,11 +717,10 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   }
   function planMinutes(p) { if (p.minutes) return p.minutes; var m = /(\d+)/.exec(p.meta || ''); return m ? parseInt(m[1], 10) : 60; }
   function renderPlan() {
-    var p = state.plan, t = planTotals();
+    var p = state.plan;
     document.body.className = 'plan has-timer'; setThemeColor('#d9d5c8');
     document.getElementById('timerbar').hidden = false;
-    var h = wheelHtml('lg', t.done, '/ ' + t.total + ' serie', planMinutes(p), 'min');
-    h += '<section class="plan-info"><h2 class="plan-title">' + esc(p.title) + '</h2><span class="cap">' + esc(p.meta) + '</span>';
+    var h = '<section class="plan-info"><h2 class="plan-title">' + esc(p.title) + '</h2><span class="cap">' + esc(p.meta) + '</span>';
     if (p.note) h += '<span class="cap" style="font-weight:700;color:var(--fg)">' + esc(p.note) + '</span>';
     h += '<div class="row-links"><button type="button" class="textbtn" id="change">Cambia scheda</button><button type="button" class="textbtn" id="reset">Azzera spunte</button></div></section>';
     h += '<div class="blocks" id="blocks">' + blocksHtml() + '</div>';
@@ -730,64 +730,47 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   function rerenderBlocks() { document.getElementById('blocks').innerHTML = blocksHtml(); updateProgress(); }
   function updateProgress() { updateWheel(); }
 
-  // ---------- Wheel + dock ----------
+  // ---------- Wheel + stage ----------
   function wheelHtml(size, num, cap, sat, satCap) {
-    var h = '<div class="wheel ' + size + '"' + (size === 'lg' ? ' id="hero"' : '') + ' role="img" aria-label="Avanzamento"><svg viewBox="0 0 200 200" aria-hidden="true"><circle class="w-track" cx="100" cy="100" r="95"/><circle class="w-fill" cx="100" cy="100" r="95" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 100 100)"/></svg><div class="w-disc"><b class="w-num">' + esc(num) + '</b><span class="w-cap">' + esc(cap) + '</span></div>';
-    if (size === 'lg' && sat !== undefined) h += '<div class="w-sat"><b>' + esc(sat) + '</b><span>' + esc(satCap) + '</span></div>';
+    var h = '<div class="wheel ' + size + '" role="img" aria-label="Avanzamento"><svg viewBox="0 0 200 200" aria-hidden="true"><circle class="w-track" cx="100" cy="100" r="95"/><circle class="w-fill" cx="100" cy="100" r="95" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 100 100)"/></svg><div class="w-disc"><b class="w-num">' + esc(num) + '</b><span class="w-cap">' + esc(cap) + '</span></div>';
+    if (sat !== undefined) h += '<div class="w-sat"><b>' + esc(sat) + '</b><span>' + esc(satCap) + '</span></div>';
     return h + '</div>';
   }
   function updateWheel() {
-    var pct, num, meta, sub;
-    if (state.view === 'plan' && state.plan) {
+    var slot = document.getElementById('wheelslot'), isPlan = state.view === 'plan' && state.plan;
+    var v = isPlan ? 'plan' : 'setup';
+    if (slot.getAttribute('data-v') !== v) { slot.innerHTML = wheelHtml('lg', 0, '', 0, 'min'); slot.setAttribute('data-v', v); }
+    var pct, num, cap, sat, meta;
+    if (isPlan) {
       var t = planTotals(); pct = t.total ? Math.round(t.done / t.total * 100) : 0;
-      num = t.done; meta = t.done + ' / ' + t.total; sub = 'serie fatte';
-      var big = document.querySelector('#app .wheel.lg .w-num'); if (big) big.textContent = t.done;
-      var cap = document.querySelector('#app .wheel.lg .w-cap'); if (cap) cap.textContent = '/ ' + t.total + ' serie';
+      num = t.done; cap = '/ ' + t.total + ' serie'; sat = planMinutes(state.plan); meta = t.done + ' / ' + t.total + ' serie';
     } else {
-      var n = setupSteps(); pct = Math.round(n / 5 * 100);
-      var prof = PROFILES[state.form.profile] || null;
-      num = state.form.groups.length || (prof ? prof.groups.length : 0); meta = n + ' / 5'; sub = 'scelte fatte';
+      var n = setupSteps(), prof = PROFILES[state.form.profile] || null; pct = Math.round(n / 5 * 100);
+      num = state.form.groups.length || (prof ? prof.groups.length : 0); cap = num === 1 ? 'gruppo' : 'gruppi'; sat = state.form.time; meta = n + ' / 5 scelte';
     }
-    var dash = pct + ' ' + (100 - pct);
-    var fills = document.querySelectorAll('.wheel .w-fill'); for (var i = 0; i < fills.length; i++) fills[i].setAttribute('stroke-dasharray', dash);
-    document.getElementById('dockwheel').innerHTML = wheelHtml('sm', num, '');
-    var df = document.querySelector('#dockwheel .w-fill'); if (df) df.setAttribute('stroke-dasharray', dash);
-    document.getElementById('dockmeta').innerHTML = esc(meta) + '<span>' + esc(sub) + '</span>';
-    observeHero();
+    slot.querySelector('.w-num').textContent = num;
+    slot.querySelector('.w-cap').textContent = cap;
+    slot.querySelector('.w-sat b').textContent = sat;
+    slot.querySelector('.w-fill').setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
+    document.getElementById('stagemeta').textContent = meta;
   }
-  var dockHidden = false, heroOut = false, io = null, observed = null;
-  function applyDock() {
-    var dock = document.getElementById('dock'), pull = document.getElementById('pull');
-    var on = heroOut && !dockHidden;
-    dock.classList.toggle('on', on); dock.setAttribute('aria-hidden', on ? 'false' : 'true');
-    document.getElementById('dockhide').tabIndex = on ? 0 : -1;
-    var pon = heroOut && dockHidden;
-    pull.classList.toggle('on', pon); pull.tabIndex = pon ? 0 : -1;
+  var stageHidden = false;
+  function applyStage() {
+    document.getElementById('stage').classList.toggle('hidden', stageHidden);
+    var b = document.getElementById('stagetoggle');
+    b.setAttribute('aria-expanded', String(!stageHidden));
+    b.setAttribute('aria-label', stageHidden ? 'Mostra il cerchio' : 'Nascondi il cerchio');
   }
-  function observeHero() {
-    var el = document.getElementById('hero');
-    if (!el || el === observed) return;
-    if (io) io.disconnect();
-    observed = el;
-    if ('IntersectionObserver' in window) {
-      io = new IntersectionObserver(function (entries) {
-        var e = entries[entries.length - 1];
-        heroOut = e.intersectionRatio < 0.4 && e.boundingClientRect.top < 0;
-        applyDock();
-      }, { threshold: [0, 0.4, 1] });
-      io.observe(el);
-    }
-    applyDock();
-  }
-  document.getElementById('dockhide').addEventListener('click', function () { dockHidden = true; applyDock(); });
-  document.getElementById('pull').addEventListener('click', function () { dockHidden = false; applyDock(); });
+  document.getElementById('stagetoggle').addEventListener('click', function () { stageHidden = !stageHidden; applyStage(); });
   (function swipe() {
-    var y0 = null;
-    function start(e) { y0 = e.touches[0].clientY; }
-    document.getElementById('dock').addEventListener('touchstart', start, { passive: true });
-    document.getElementById('dock').addEventListener('touchend', function (e) { if (y0 !== null && e.changedTouches[0].clientY - y0 < -24) { dockHidden = true; applyDock(); } y0 = null; }, { passive: true });
-    document.getElementById('pull').addEventListener('touchstart', start, { passive: true });
-    document.getElementById('pull').addEventListener('touchend', function (e) { if (y0 !== null && e.changedTouches[0].clientY - y0 > 12) { dockHidden = false; applyDock(); } y0 = null; }, { passive: true });
+    var y0 = null, st = document.getElementById('stage');
+    st.addEventListener('touchstart', function (e) { y0 = e.touches[0].clientY; }, { passive: true });
+    st.addEventListener('touchend', function (e) {
+      if (y0 === null) return;
+      var dy = e.changedTouches[0].clientY - y0; y0 = null;
+      if (dy < -24 && !stageHidden) { stageHidden = true; applyStage(); }
+      else if (dy > 24 && stageHidden) { stageHidden = false; applyStage(); }
+    }, { passive: true });
   })();
 
   function render() { if (state.view === 'plan' && state.plan) renderPlan(); else renderSetup(); }
@@ -811,15 +794,15 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
         if (!state.form.groups.length && !state.form.profile) { renderSetup('Scegli almeno un gruppo muscolare o un obiettivo.'); return; }
         var res = generate(state.form);
         if (res.error) { renderSetup(res.error); return; }
-        state.plan = res.plan; state.view = 'plan'; save(); render(); window.scrollTo(0, 0); return;
+        state.plan = res.plan; state.view = 'plan'; save(); render(); document.getElementById('scroll').scrollTop = 0; return;
       }
-      if (t.closest('[data-back]')) { state.view = 'plan'; save(); render(); window.scrollTo(0, 0); return; }
+      if (t.closest('[data-back]')) { state.view = 'plan'; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
       if ((el = t.closest('[data-preset]'))) {
-        state.plan = presetPlan(parseInt(el.getAttribute('data-preset'), 10)); state.view = 'plan'; save(); render(); window.scrollTo(0, 0); return;
+        state.plan = presetPlan(parseInt(el.getAttribute('data-preset'), 10)); state.view = 'plan'; save(); render(); document.getElementById('scroll').scrollTop = 0; return;
       }
       return;
     }
-    if (t.id === 'change') { state.view = 'setup'; save(); render(); window.scrollTo(0, 0); return; }
+    if (t.id === 'change') { state.view = 'setup'; save(); render(); document.getElementById('scroll').scrollTop = 0; return; }
     if (t.id === 'reset') {
       state.plan.blocks.forEach(function (b) { b.items.forEach(function (ex) { delete state.done[ex.id]; }); });
       save(); rerenderBlocks(); return;
