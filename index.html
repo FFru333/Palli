@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Palli</title>
+<meta name="theme-color" content="#e45a38">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Palli">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -54,6 +61,9 @@ header p.note { font-weight: 700; color: var(--fg); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { min-height: 44px; padding: 0 17px; border-radius: 99px; border: 2px solid var(--fg); background: transparent; font-weight: 700; white-space: nowrap; }
 .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.chip.sug { border-style: dashed; }
+.chip:disabled { cursor: default; }
+.chip:disabled[aria-pressed="false"] { opacity: .4; }
 .times { display: flex; flex-wrap: wrap; gap: 10px; }
 .tbtn { width: 62px; height: 62px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; font-size: 1.45rem; font-weight: 800; letter-spacing: -.04em; display: flex; align-items: center; justify-content: center; }
 .tbtn[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
@@ -119,6 +129,7 @@ header p.note { font-weight: 700; color: var(--fg); }
 .timer .time.end { color: #ff8a6b; }
 .timer button { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--beige); background: transparent; color: var(--beige); font-weight: 800; font-size: 1rem; letter-spacing: -.02em; padding: 0; }
 .timer .stop { margin-left: auto; background: var(--red); border-color: var(--red); color: #fff; font-size: .8rem; }
+body.setup footer { display: none; }
 footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22px; border-top: 1px solid var(--hair); margin-top: 18px; }
 @media (prefers-reduced-motion: reduce) { .ring .fill { transition: none; } }
 </style>
@@ -126,7 +137,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
 <body class="setup">
 <div class="wrap">
   <header>
-    <h1 id="h1">Scheda superserie</h1>
+    <h1 id="h1">Palli</h1>
     <p id="sub"></p>
   </header>
   <div id="app"><div class="nojs"><b>Questa anteprima non esegue gli script.</b><p>La scheda funziona solo aprendo il file in un browser: salva il file, poi aprilo con Safari o Chrome. Se è online, apri il link nel browser invece che nell'anteprima di un'app di messaggi o di file.</p></div></div>
@@ -149,7 +160,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     {
       id: 's1', tab: 'Seduta 1', sub: 'Petto, bicipiti, gambe',
       blocks: [
-        { label: 'Superserie 1', note: 'A1, A2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60-75 s dopo A2', items: [
+        { label: 'Superserie 1', note: 'A1 + A2', kind: 'ss', rest: 'recupero 60-75 s', items: [
           { id: 's1a1', tag: 'A1', reps: '8-12', muscle: 'Petto',
             opts: [
               { n: 'Panca piana con manubri', t: 'Scapole indietro e giù, gomiti a circa 45° dal busto, scendi finché i manubri sono all\'altezza del petto.' },
@@ -165,7 +176,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
               { n: 'Trazioni assistite supine', t: 'Se non arrivi alle 6 ripetizioni: macchina assistita o elastico.' }
             ] }
         ] },
-        { label: 'Superserie 2', note: 'B1, B2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60-75 s dopo B2', items: [
+        { label: 'Superserie 2', note: 'B1 + B2', kind: 'ss', rest: 'recupero 60-75 s', items: [
           { id: 's1b1', tag: 'B1', reps: '8-12', muscle: 'Petto alto',
             opts: [
               { n: 'Panca inclinata con manubri', t: 'Panca a 30°. Oltre i 45° lavora più la spalla che il petto.' },
@@ -181,7 +192,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
               { n: 'Curl ai cavi con barra', t: 'Come l\'EZ ma con tensione costante.' }
             ] }
         ] },
-        { label: 'Superserie 3', note: 'C1, C2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60 s dopo C2', items: [
+        { label: 'Superserie 3', note: 'C1 + C2', kind: 'ss', rest: 'recupero 60 s', items: [
           { id: 's1c1', tag: 'C1', reps: '10-15', muscle: 'Petto',
             opts: [
               { n: 'Croci ai cavi', t: 'Gomiti leggermente flessi, porta le mani davanti allo sterno e stringi un secondo.' },
@@ -197,7 +208,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
               { n: 'Curl 21', t: 'Tre mezzi range da 7 ripetizioni con il bilanciere EZ, leggero.' }
             ] }
         ] },
-        { label: 'Gambe', note: 'Serie normali, non in superserie', kind: 'single', rest: 'Recupero 90 s tra le serie', items: [
+        { label: 'Gambe', note: 'non in superserie', kind: 'single', rest: 'recupero 90 s', items: [
           { id: 's1g1', tag: 'G1', reps: '8-12', muscle: 'Quadricipiti, glutei',
             opts: [
               { n: 'Pressa', t: 'Piedi a metà piattaforma, ginocchia in linea con le punte, non bloccare in alto.' },
@@ -213,7 +224,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
               { n: 'Polpacci da seduto', t: 'Lavora di più il soleo, ginocchia a 90°.' }
             ] }
         ] },
-        { label: 'Extra (se avanza tempo)', note: 'Opzionale', kind: 'single', rest: 'Recupero 45-60 s', items: [
+        { label: 'Extra (se avanza tempo)', note: 'Opzionale', kind: 'single', rest: 'recupero 45-60 s', items: [
           { id: 's1x1', tag: 'X', reps: '12-15', muscle: 'Spalle (deltoidi laterali)',
             opts: [
               { n: 'Alzate laterali', t: 'Gomiti leggermente flessi, sali fino all\'altezza della spalla, niente slancio.' },
@@ -227,7 +238,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     {
       id: 's2', tab: 'Seduta 2', sub: 'Schiena, tricipiti, gambe',
       blocks: [
-        { label: 'Superserie 1', note: 'A1, A2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60-75 s dopo A2', items: [
+        { label: 'Superserie 1', note: 'A1 + A2', kind: 'ss', rest: 'recupero 60-75 s', items: [
           { id: 's2a1', tag: 'A1', reps: '6-10', muscle: 'Dorsali',
             opts: [
               { n: 'Trazioni', t: 'Presa poco più larga delle spalle, petto verso la sbarra, scendi controllato.' },
@@ -243,7 +254,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
               { n: 'Panca presa stretta', t: 'Mani poco più strette delle spalle, gomiti vicini.' }
             ] }
         ] },
-        { label: 'Superserie 2', note: 'B1, B2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60-75 s dopo B2', items: [
+        { label: 'Superserie 2', note: 'B1 + B2', kind: 'ss', rest: 'recupero 60-75 s', items: [
           { id: 's2b1', tag: 'B1', reps: '8-12', muscle: 'Dorsali',
             opts: [
               { n: 'Lat machine', t: 'Busto leggermente inclinato indietro, tira con i gomiti, non con le mani.' },
@@ -259,7 +270,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
               { n: 'Kickback al cavo', t: 'Busto in avanti, carico basso.' }
             ] }
         ] },
-        { label: 'Superserie 3', note: 'C1, C2, recupero, 3 giri', kind: 'ss', rest: 'Recupero 60 s dopo C2', items: [
+        { label: 'Superserie 3', note: 'C1 + C2', kind: 'ss', rest: 'recupero 60 s', items: [
           { id: 's2c1', tag: 'C1', reps: '10-12 per lato', muscle: 'Dorsali, romboidi',
             opts: [
               { n: 'Rematore a un braccio su panca', t: 'Schiena piatta, porta il gomito verso l\'anca.' },
@@ -275,7 +286,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
               { n: 'French press alla panca', t: 'Con bilanciere EZ, gomiti fermi.' }
             ] }
         ] },
-        { label: 'Gambe', note: 'Serie normali, non in superserie', kind: 'single', rest: 'Recupero 90 s tra le serie', items: [
+        { label: 'Gambe', note: 'non in superserie', kind: 'single', rest: 'recupero 90 s', items: [
           { id: 's2g1', tag: 'G1', reps: '10-12', muscle: 'Femorali',
             opts: [
               { n: 'Leg curl (macchina)', t: 'Anca appoggiata, non staccarla, scendi lento.' },
@@ -291,7 +302,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
               { n: 'Ponte glutei con bilanciere', t: 'Versione da terra dell\'hip thrust, meno escursione.' }
             ] }
         ] },
-        { label: 'Extra (se avanza tempo)', note: 'Opzionale', kind: 'single', rest: 'Recupero 45-60 s', items: [
+        { label: 'Extra (se avanza tempo)', note: 'Opzionale', kind: 'single', rest: 'recupero 45-60 s', items: [
           { id: 's2x1', tag: 'X', reps: '12-15', muscle: 'Spalle (deltoidi posteriori)',
             opts: [
               { n: 'Face pull', t: 'Corda all\'altezza del viso, tira verso la fronte aprendo i gomiti.' },
@@ -527,26 +538,26 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
         for (var p = 0; p < prefs.length && partner < 0; p++) {
           for (var j = i + 1; j < picked.length; j++) { if (!used[j] && picked[j].g === prefs[p]) { partner = j; break; } }
         }
+        if (partner < 0) { for (var j2 = i + 1; j2 < picked.length; j2++) { if (!used[j2] && picked[j2].g !== a.g) { partner = j2; break; } } }
         if (partner >= 0) { used[partner] = true; blocksRaw.push([a, picked[partner]]); } else blocksRaw.push([a]);
       });
     } else {
       picked.forEach(function (a) { blocksRaw.push([a]); });
     }
 
-    var stamp = 'g' + Date.now().toString(36), k = 0, ssN = 0, minutes = 5 + cardio, letters = 'ABCDEFGHIJKL';
+    var stamp = 'g' + Date.now().toString(36), k = 0, ssN = 0, singleN = 0, minutes = 5 + cardio, letters = 'ABCDEFGHIJKL';
     var blocks = blocksRaw.map(function (items, bi) {
       var isSS = items.length === 2;
       if (isSS) ssN++;
-      var lastTag = letters[bi] + items.length;
       var big = items.some(function (x) { return x.slot.big; });
       var restS = big ? restBig : restIso;
       var b = {
-        label: isSS ? 'Superserie ' + ssN : 'Serie normali',
-        note: isSS ? letters[bi] + '1, ' + letters[bi] + '2, recupero, ' + sets + ' giri' : sets + ' serie',
+        label: isSS ? 'Superserie ' + ssN : (sup ? 'Esercizio singolo' : 'Esercizio ' + (++singleN)),
+        note: isSS ? letters[bi] + '1 + ' + letters[bi] + '2' : (sup ? 'senza abbinamento' : ''),
         kind: isSS ? 'ss' : 'single',
-        rest: isSS ? 'Recupero ' + restSS + ' s dopo ' + lastTag : 'Recupero ' + restS + ' s tra le serie',
+        rest: 'recupero ' + (isSS ? restSS : restS) + ' s',
         items: items.map(function (x, ii) {
-          return { id: stamp + '_' + (k++), tag: letters[bi] + (ii + 1), reps: x.slot.big ? repsBig : repsIso, muscle: gname(x.g), sets: sets, opts: x.slot.opts.map(function (y) { return { n: y.n, t: y.t }; }) };
+          return { id: stamp + '_' + (k++), tag: isSS ? letters[bi] + (ii + 1) : letters[bi], reps: x.slot.big ? repsBig : repsIso, muscle: gname(x.g), sets: sets, opts: x.slot.opts.map(function (y) { return { n: y.n, t: y.t }; }) };
         })
       };
       minutes += isSS ? sets * (1.5 + restSS / 60) : sets * (0.75 + restS / 60);
@@ -554,8 +565,8 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     });
     if (cardio) {
       var copts = CARDIO_OPTS.filter(function (x) { return optOk(x, f.eq); }).map(function (y) { return { n: y.n, t: y.t }; });
-      blocks.push({ label: 'Cardio finale', note: cardio + ' minuti', kind: 'single', bigN: String(cardio), bigU: 'min', rest: 'Ritmo costante, senza fermarti.',
-        items: [{ id: stamp + '_c', tag: 'C', reps: cardio + ' min', muscle: 'Cardio', sets: 1, opts: copts }] });
+      blocks.push({ label: 'Cardio finale', note: '', kind: 'single', bigN: String(cardio), bigU: 'min', rest: 'ritmo costante, senza fermarti',
+        items: [{ id: stamp + '_c', tag: 'C', reps: cardio + ' min', muscle: 'Cardio', sets: 1, cardio: true, opts: copts }] });
     }
     minutes = Math.round(minutes / 5) * 5;
     var notes = [];
@@ -577,6 +588,7 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   if (typeof state.form.profile !== 'string') state.form.profile = '';
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
+  function setThemeColor(c) { var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', c); }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function setsFor(ex) { return (ex.sets || 3) + (state.extra[ex.id] || 0); }
   function doneArr(ex) { return state.done[ex.id] || []; }
@@ -592,16 +604,16 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
   }
 
   // ---------- Schermata di scelta ----------
-  function chip(label, pressed, attr, val) {
-    return '<button type="button" class="chip" aria-pressed="' + pressed + '" ' + attr + '="' + esc(val) + '">' + esc(label) + '</button>';
+  function chip(label, pressed, attr, val, cls, locked) {
+    return '<button type="button" class="chip' + (cls ? ' ' + cls : '') + '" aria-pressed="' + pressed + '" ' + attr + '="' + esc(val) + '"' + (locked ? ' disabled' : '') + '>' + esc(label) + '</button>';
   }
-  function seg(obj, cur, attr) {
+  function seg(obj, cur, attr, locked) {
     var h = '<div class="chips">';
-    Object.keys(obj).forEach(function (k) { h += chip(obj[k], cur === k, attr, k); });
+    Object.keys(obj).forEach(function (k) { h += chip(obj[k], cur === k, attr, k, '', locked); });
     return h + '</div>';
   }
   function renderSetup(err) {
-    document.body.className = 'setup';
+    document.body.className = 'setup'; setThemeColor('#e45a38');
     var h1 = document.getElementById('h1'); h1.textContent = 'Che allenamento fai?'; h1.style.fontSize = '';
     document.getElementById('sub').textContent = 'Scegli gruppi, tempo e attrezzatura. La scheda si crea da sola.';
     document.getElementById('timerbar').hidden = true;
@@ -613,19 +625,22 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     Object.keys(PROFILES).forEach(function (k) { h += chip(PROFILES[k].n, f.profile === k, 'data-prof', k); });
     h += '</div></section>';
     h += '<section class="panel"><h2>Enfasi <span class="cap">facoltativa</span></h2><p class="hint">Se hai poco tempo, i gruppi scelti qui ricevono più esercizi.</p>' + seg(EMPH, f.emph, 'data-emph') + '</section>';
-    h += '<section class="panel"><h2>Gruppi muscolari</h2><p class="hint">Scegline quanti vuoi. Con meno tempo, meno gruppi.' + (prof ? ' Se non ne scegli, uso quelli dell\'obiettivo.' : '') + '</p><div class="chips">';
-    GROUPS.forEach(function (g) { h += chip(g.n, f.groups.indexOf(g.id) >= 0, 'data-g', g.id); });
+    h += '<section class="panel"><h2>Gruppi muscolari</h2><p class="hint">Scegline quanti vuoi. Con meno tempo, meno gruppi.' + (prof ? ' Se non ne scegli, uso quelli tratteggiati, suggeriti dall\'obiettivo.' : '') + '</p><div class="chips">';
+    GROUPS.forEach(function (g) { var on = f.groups.indexOf(g.id) >= 0; var sug = !f.groups.length && prof && prof.groups.indexOf(g.id) >= 0; h += chip(g.n, on, 'data-g', g.id, sug ? 'sug' : ''); });
     h += '</div></section>';
     h += '<section class="panel"><h2>Tempo</h2><p class="hint">Minuti totali, riscaldamento compreso.</p><div class="times">';
     TIMES.forEach(function (t) { h += '<button type="button" class="tbtn" aria-pressed="' + (f.time === t) + '" data-time="' + t + '" aria-label="' + t + ' minuti">' + t + '</button>'; });
     h += '</div></section>';
-    if (!(prof && prof.style)) h += '<section class="panel"><h2>Stile</h2><p class="hint">Le superserie alternano due esercizi senza pause lunghe e tengono alti i battiti.</p>' + seg(STYLES, f.style, 'data-style') + '</section>';
+    var forced = prof && prof.style;
+    h += '<section class="panel"><h2>Stile</h2><p class="hint">' + (forced ? 'Fissato dall\'obiettivo ' + esc(prof.n) + ': ' + STYLES[forced].toLowerCase() + '.' : 'Le superserie alternano due esercizi senza pause lunghe e tengono alti i battiti.') + '</p>' + seg(STYLES, forced || f.style, 'data-style', !!forced) + '</section>';
     h += '<section class="panel"><h2>Attrezzatura</h2>' + seg(EQUIP, f.eq, 'data-eq') + '</section>';
-    h += '<section class="panel"><h2>Livello</h2><p class="hint">Cambia il numero di serie e le ripetizioni.</p>' + seg(LEVELS, f.level, 'data-level') + '</section>';
+    var lvLock = prof && prof.sets && prof.big;
+    var lvHint = lvLock ? 'Fissato dall\'obiettivo ' + esc(prof.n) + ': serie e ripetizioni sono già impostate.' : (prof && prof.big ? 'Cambia il numero di serie. Le ripetizioni le fissa l\'obiettivo.' : 'Cambia il numero di serie e le ripetizioni.');
+    h += '<section class="panel"><h2>Livello</h2><p class="hint">' + lvHint + '</p>' + seg(LEVELS, f.level, 'data-level', !!lvLock) + '</section>';
     h += '<div class="cta-row"><button type="button" class="primary" data-go="1">Crea la<br>scheda</button><div class="cta-side"><p class="err" id="err" role="alert">' + (err ? esc(err) : '') + '</p>';
     if (state.plan) h += '<button type="button" class="textbtn" data-back="1">Torna alla scheda in corso: ' + esc(state.plan.title) + '</button>';
     h += '</div></div>';
-    h += '<section class="panel" style="margin-top:14px"><h2>Schede pronte</h2><div class="presets">';
+    h += '<section class="panel" style="margin-top:14px"><h2>Schede pronte</h2><p class="hint">Non seguono le scelte qui sopra.</p><div class="presets">';
     SESSIONS.forEach(function (s, i) { h += '<button type="button" class="preset" data-preset="' + i + '"><span><b>' + esc(s.sub) + '</b><span class="cap" style="display:block">Superserie, gambe a parte, circa 60 min</span></span><span class="go" aria-hidden="true">&rarr;</span></button>'; });
     h += '</div></section>';
     document.getElementById('app').innerHTML = h;
@@ -637,31 +652,31 @@ footer { color: var(--sub); font-size: .8rem; font-weight: 500; padding-top: 22p
     var count = 0; for (var i = 0; i < n; i++) if (d[i]) count++;
     var kgKey = ex.id + '|' + oi;
     var h = '<div class="ex' + (count === n ? ' complete' : '') + '" data-ex="' + ex.id + '">';
-    h += '<div class="ex-top"><div class="tag">' + esc(ex.tag) + '</div><div><div class="ex-name">' + esc(op.n) + '</div><div class="ex-meta">' + esc(ex.muscle) + ' · ' + n + ' × ' + esc(ex.reps) + '</div></div></div>';
+    h += '<div class="ex-top"><div class="tag">' + esc(ex.tag) + '</div><div><div class="ex-name">' + esc(op.n) + '</div><div class="ex-meta">' + esc(ex.muscle) + ' · ' + (ex.cardio ? '' : n + ' × ') + esc(ex.reps) + '</div></div></div>';
     h += '<div class="sets">';
     for (var s = 0; s < n; s++) h += '<button class="set" type="button" data-set="' + s + '" aria-pressed="' + (!!d[s]) + '" aria-label="Serie ' + (s + 1) + '">' + (s + 1) + '</button>';
-    h += '<button class="mini" type="button" data-act="add" aria-label="Aggiungi una serie">+</button>';
-    h += '<label class="kg"><span>kg</span><input type="text" inputmode="decimal" id="kg-' + ex.id + '" data-kg="' + esc(kgKey) + '" value="' + esc(state.kg[kgKey] || '') + '" placeholder="0"></label>';
+    if (!ex.cardio) h += '<button class="mini" type="button" data-act="add" aria-label="Aggiungi una serie">+</button>';
+    if (!ex.cardio) h += '<label class="kg"><span>kg</span><input type="text" inputmode="decimal" id="kg-' + ex.id + '" data-kg="' + esc(kgKey) + '" value="' + esc(state.kg[kgKey] || '') + '" placeholder="0"></label>';
     h += '</div>';
     h += '<div class="tools"><select id="alt-' + ex.id + '" data-act="alt" aria-label="Alternativa per ' + esc(ex.tag) + '">';
     ex.opts.forEach(function (x, i) { h += '<option value="' + i + '"' + (i === oi ? ' selected' : '') + '>' + (i === 0 ? 'Base: ' : 'Alternativa: ') + esc(x.n) + '</option>'; });
     h += '</select><button type="button" data-act="info" aria-expanded="' + (!!state.info[ex.id]) + '">Info</button></div>';
-    h += '<dl class="info"' + (state.info[ex.id] ? '' : ' hidden') + '><div><dt>Come: </dt><dd>' + esc(op.t) + '</dd></div><div><dt>Muscoli: </dt><dd>' + esc(ex.muscle) + '</dd></div><div><dt>Serie e ripetizioni: </dt><dd>' + n + ' × ' + esc(ex.reps) + '</dd></div></dl>';
+    h += '<dl class="info"' + (state.info[ex.id] ? '' : ' hidden') + '><div><dt>Come: </dt><dd>' + esc(op.t) + '</dd></div></dl>';
     return h + '</div>';
   }
   function blocksHtml() {
     var h = '';
     state.plan.blocks.forEach(function (b) {
       var n0 = b.bigN || (b.items[0].sets || 3);
-      h += '<section class="block"><div class="block-h"><div><h2>' + esc(b.label) + '</h2><span class="cap">' + esc(b.note) + '</span></div><div class="big-n"><b>' + n0 + '</b><span>' + (b.bigU || (b.kind === 'ss' ? 'giri' : 'serie')) + '</span></div></div>';
+      h += '<section class="block"><div class="block-h"><div><h2>' + esc(b.label) + '</h2><span class="cap">' + esc([b.note, b.rest].filter(Boolean).join(' · ')) + '</span></div><div class="big-n"><b>' + n0 + '</b><span>' + (b.bigU || (b.kind === 'ss' ? 'giri' : 'serie')) + '</span></div></div>';
       b.items.forEach(function (ex) { h += exHtml(ex); });
-      h += '<div class="rest-note cap">' + esc(b.rest) + '</div></section>';
+      h += '</section>';
     });
     return h;
   }
   function renderPlan() {
     var p = state.plan;
-    document.body.className = 'plan has-timer';
+    document.body.className = 'plan has-timer'; setThemeColor('#d9d5c8');
     var h1 = document.getElementById('h1'); h1.textContent = p.title; h1.style.fontSize = p.title.length > 28 ? '2rem' : '';
     document.getElementById('sub').textContent = p.meta;
     document.getElementById('timerbar').hidden = false;
