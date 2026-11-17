@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Palli</title>
 <meta name="theme-color" content="#ece6d4">
-<meta name="palli-version" content="2026-11-17.1827">
+<meta name="palli-version" content="2026-11-17.1834">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Palli">
@@ -282,6 +282,17 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
 .upd { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; padding: 10px 12px 10px 16px; border-radius: 99px; background: var(--fg); color: var(--on-dark); font-weight: 700; }
 .upd[hidden] { display: none; }
 .upd .pillbtn { height: 38px; padding: 0 16px; }
+
+.ex-top { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; cursor: grab; }
+.ex-top > div:nth-child(2) { flex: 1; min-width: 0; }
+.grip { flex: none; width: 22px; height: 30px; margin-left: auto; opacity: .35; background: radial-gradient(circle, currentColor 1.6px, transparent 2px) 0 0 / 11px 10px; }
+.ex.dragging { opacity: .28; }
+.ghost { position: fixed; left: 14px; right: 14px; top: 0; z-index: 60; pointer-events: none; display: flex; gap: 12px; align-items: flex-start; background: var(--beige); border: 2px solid var(--fg); border-radius: 16px; padding: 10px 14px; box-shadow: 0 14px 34px rgba(0,0,0,.28); }
+.ghost .grip { display: none; }
+#dropline { position: fixed; display: none; height: 4px; border-radius: 2px; background: var(--red); z-index: 59; pointer-events: none; }
+.block.join { outline: 3px solid var(--red); outline-offset: -3px; background: rgba(210,54,43,.07); }
+body.dragmode, body.dragmode * { -webkit-user-select: none; user-select: none; }
+.dragtip { font-size: .8rem; opacity: .75; }
 </style>
 </head>
 <body class="setup">
@@ -1579,7 +1590,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     var count = 0; for (var i = 0; i < n; i++) if (d[i]) count++;
     var kgKey = ex.id + '|' + oi;
     var h = '<div class="ex' + (count === n ? ' complete' : '') + '" data-ex="' + ex.id + '">';
-    h += '<div class="ex-top"><div class="tag">' + esc(ex.tag) + '</div><div><div class="ex-name">' + esc(op.n) + '</div><div class="ex-meta">' + esc(ex.muscle) + ' · ' + (ex.cardio ? '' : n + ' × ') + esc(ex.reps) + '</div></div></div>';
+    h += '<div class="ex-top"><div class="tag">' + esc(ex.tag) + '</div><div><div class="ex-name">' + esc(op.n) + '</div><div class="ex-meta">' + esc(ex.muscle) + ' · ' + (ex.cardio ? '' : n + ' × ') + esc(ex.reps) + '</div></div><div class="grip" aria-hidden="true"></div></div>';
     h += '<div class="exbar" aria-hidden="true">';
     for (var q = 0; q < n; q++) h += '<i' + (d[q] ? ' class="on"' : '') + '></i>';
     h += '</div>';
@@ -1621,7 +1632,7 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
     h += '<div class="row-links"><button type="button" class="textbtn" id="change">Cambia scheda</button><button type="button" class="textbtn" id="reset">Azzera spunte</button><button type="button" class="textbtn" id="savebtn">' + (p.savedId && savedIndex(p.savedId) >= 0 ? 'Aggiorna scheda salvata' : 'Salva scheda') + '</button></div>';
     if (state.ui.saving) h += '<div class="saverow"><input type="text" id="savename" maxlength="40" aria-label="Nome della scheda" value="' + esc(p.title) + '"><button type="button" class="pillbtn solid" id="savego">Salva</button>' + (p.savedId && savedIndex(p.savedId) >= 0 ? '<button type="button" class="pillbtn" id="savenew">Come nuova</button>' : '') + '<button type="button" class="pillbtn" id="savecancel">Annulla</button></div>';
     if (state.ui.saved) h += '<span class="cap" style="font-weight:700;color:var(--fg)">' + esc(state.ui.saved) + '</span>';
-    h += '</section>';
+    h += '<span class="cap dragtip">Tieni premuto un esercizio e trascinalo: sopra un altro per farne una superserie, tra due blocchi per separarlo.</span></section>';
     h += '<div class="blocks" id="blocks">' + blocksHtml() + '</div>';
     h += '<section class="finish"><button type="button" class="finbtn" id="finish">Termina<br>seduta</button><div class="side"><p class="err" id="finerr" role="alert"></p><p class="hint">Registra la seduta nel tuo storico e azzera le spunte.</p></div></section>';
     document.getElementById('app').innerHTML = h;
@@ -1905,6 +1916,122 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
       state.info[ex.id] = !state.info[ex.id]; save(); rerenderBlocks();
     }
   }
+
+  // ---------- Riordino con trascinamento (tieni premuto) ----------
+  function relabelPlan(plan) {
+    var L = 'ABCDEFGHIJKL', ssN = 0, sN = 0, anySS = plan.blocks.some(function (b) { return b.items.length === 2; });
+    var ssRest = '70', sgRest = '90';
+    plan.blocks.forEach(function (b) {
+      var m = /(\d+)/.exec(b.rest || '');
+      if (m && !b.items[0].cardio) { if (b.items.length === 2) ssRest = m[1]; else sgRest = m[1]; }
+    });
+    plan.blocks.forEach(function (b, bi) {
+      if (b.items.length === 1 && b.items[0].cardio) return;
+      var isSS = b.items.length === 2;
+      b.kind = isSS ? 'ss' : 'single';
+      if (isSS) { ssN++; b.label = 'Superserie ' + ssN; b.note = L[bi] + '1 + ' + L[bi] + '2'; b.rest = 'recupero ' + ssRest + ' s'; }
+      else { b.label = anySS ? 'Esercizio singolo' : 'Esercizio ' + (++sN); b.note = anySS ? 'senza abbinamento' : ''; b.rest = 'recupero ' + sgRest + ' s'; }
+      b.items.forEach(function (x, ii) { x.tag = isSS ? L[bi] + (ii + 1) : L[bi]; });
+    });
+  }
+  function moveEx(id, target) {
+    var plan = state.plan, src = null, item = null;
+    plan.blocks.forEach(function (b) { b.items.forEach(function (x) { if (x.id === id) { src = b; item = x; } }); });
+    if (!src || !target) return false;
+    var tb = target.blk;
+    if (tb === src && src.items.length === 1) return false;
+    if (target.type === 'join' && (tb === src || tb.items.length !== 1 || tb.items[0].cardio || item.cardio)) return false;
+    src.items.splice(src.items.indexOf(item), 1);
+    if (!src.items.length) plan.blocks.splice(plan.blocks.indexOf(src), 1);
+    if (target.type === 'join') tb.items.push(item);
+    else {
+      var nb = { label: '', note: '', kind: 'single', rest: '', items: [item] };
+      if (item.cardio) { nb.bigN = String(parseInt(item.reps, 10) || 10); nb.bigU = 'min'; nb.label = 'Cardio finale'; nb.rest = 'ritmo costante, senza fermarti'; }
+      plan.blocks.splice(plan.blocks.indexOf(tb) + (target.type === 'after' ? 1 : 0), 0, nb);
+    }
+    relabelPlan(plan);
+    return true;
+  }
+  function dropTarget(y, id) {
+    var els = document.querySelectorAll('#blocks > .block'), blks = state.plan.blocks;
+    if (!els.length) return null;
+    var item = findEx(id);
+    for (var i = 0; i < els.length; i++) {
+      var r = els[i].getBoundingClientRect(), blk = blks[i];
+      if (y < r.top && i === 0) return { type: 'before', blk: blk, y: r.top };
+      if (y >= r.top && y <= r.bottom) {
+        var f = (y - r.top) / r.height;
+        var own = blk.items.some(function (x) { return x.id === id; });
+        var canJoin = !own && blk.items.length === 1 && !blk.items[0].cardio && !(item && item.cardio);
+        if (canJoin && f > 0.25 && f < 0.75) return { type: 'join', blk: blk, el: els[i] };
+        if (own && blk.items.length === 2 && f > 0.25 && f < 0.75) return null;
+        return f < 0.5 ? { type: 'before', blk: blk, y: r.top } : { type: 'after', blk: blk, y: r.bottom };
+      }
+    }
+    var last = els[els.length - 1].getBoundingClientRect();
+    return { type: 'after', blk: blks[blks.length - 1], y: last.bottom };
+  }
+  (function () {
+    var timer = null, drag = null, sx = 0, sy = 0, scrollT = null, lastY = 0;
+    function clearHl() {
+      var h = document.querySelector('#blocks .block.join'); if (h) h.classList.remove('join');
+      var l = document.getElementById('dropline'); if (l) l.style.display = 'none';
+    }
+    function cancelPress() { if (timer) { clearTimeout(timer); timer = null; } }
+    function begin(card, x, y) {
+      var id = card.getAttribute('data-ex');
+      var g = document.createElement('div'); g.className = 'ghost';
+      g.innerHTML = card.querySelector('.ex-top').innerHTML; document.body.appendChild(g);
+      var l = document.getElementById('dropline');
+      if (!l) { l = document.createElement('div'); l.id = 'dropline'; document.body.appendChild(l); }
+      card.classList.add('dragging'); document.body.classList.add('dragmode');
+      drag = { id: id, ghost: g, card: card, target: null };
+      haptic(18); move(x, y);
+      scrollT = setInterval(function () {
+        var sc = document.getElementById('scroll'), r = sc.getBoundingClientRect();
+        if (lastY < r.top + 80) sc.scrollTop -= 12; else if (lastY > r.bottom - 130) sc.scrollTop += 12; else return;
+        if (drag) update(lastY);
+      }, 16);
+    }
+    function update(y) {
+      var t = dropTarget(y, drag.id); drag.target = t; clearHl();
+      if (!t) return;
+      if (t.type === 'join') t.el.classList.add('join');
+      else { var l = document.getElementById('dropline'), b = document.getElementById('blocks').getBoundingClientRect(); l.style.cssText = 'display:block;left:' + b.left + 'px;width:' + b.width + 'px;top:' + (t.y - 2) + 'px'; }
+    }
+    function move(x, y) { lastY = y; drag.ghost.style.transform = 'translate(0,' + (y - 34) + 'px)'; update(y); }
+    function end(commit) {
+      cancelPress(); clearInterval(scrollT);
+      if (!drag) return;
+      var d = drag, t = d.target; drag = null;
+      d.ghost.remove(); clearHl(); document.body.classList.remove('dragmode'); d.card.classList.remove('dragging');
+      if (commit && t) {
+        var before = {}; [].forEach.call(document.querySelectorAll('#blocks .ex'), function (e) { before[e.getAttribute('data-ex')] = e.getBoundingClientRect().top; });
+        if (moveEx(d.id, t)) {
+          haptic(12); save(); rerenderBlocks();
+          [].forEach.call(document.querySelectorAll('#blocks .ex'), function (e) {
+            var k = e.getAttribute('data-ex'), dy = before[k] !== undefined ? before[k] - e.getBoundingClientRect().top : 0;
+            if (dy) { e.style.transition = 'none'; e.style.transform = 'translateY(' + dy + 'px)'; requestAnimationFrame(function () { requestAnimationFrame(function () { e.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1)'; e.style.transform = ''; }); }); }
+          });
+        }
+      }
+    }
+    var app = document.getElementById('app');
+    app.addEventListener('pointerdown', function (e) {
+      var top = e.target.closest && e.target.closest('.ex-top'); if (!top || drag) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      var card = top.closest('.ex'); sx = e.clientX; sy = e.clientY; cancelPress();
+      timer = setTimeout(function () { timer = null; begin(card, sx, sy); }, 330);
+    });
+    document.addEventListener('pointermove', function (e) {
+      if (drag) { move(e.clientX, e.clientY); return; }
+      if (timer && (Math.abs(e.clientX - sx) > 9 || Math.abs(e.clientY - sy) > 9)) cancelPress();
+    });
+    document.addEventListener('touchmove', function (e) { if (drag) { e.preventDefault(); var t = e.touches[0]; move(t.clientX, t.clientY); } }, { passive: false });
+    document.addEventListener('pointerup', function () { if (drag) end(true); else cancelPress(); });
+    document.addEventListener('pointercancel', function () { if (drag) end(false); else cancelPress(); });
+    document.addEventListener('contextmenu', function (e) { if (drag || timer || (e.target.closest && e.target.closest('.ex-top'))) e.preventDefault(); });
+  })();
   document.getElementById('app').addEventListener('click', onAppClick);
   document.getElementById('ctabar').addEventListener('click', onAppClick);
   document.getElementById('app').addEventListener('toggle', function (e) {
