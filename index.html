@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Palli</title>
 <meta name="theme-color" content="#ece6d4">
-<meta name="palli-version" content="2026-11-03.1951">
+<meta name="palli-version" content="2026-11-17.1827">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Palli">
@@ -716,6 +716,17 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
   ];
 
   var uidN = 0;
+  // Attrezzo dell'esercizio: manubri (e panca), cavi/macchine, bilanciere/sbarra, corpo libero.
+  function stationOf(n) {
+    if (/manubri|manubrio/i.test(n)) return 'db';
+    if (/cavo|cavi|pec deck|lat machine|macchina|pulley|pulldown|face pull|reverse/i.test(n)) return 'mc';
+    if (/bilanciere|sbarra|trazioni|multipower/i.test(n)) return 'bar';
+    return 'bw';
+  }
+  function findStation(opts, st, eq) {
+    for (var i = 0; i < opts.length; i++) if (optOk(opts[i], eq) && stationOf(opts[i].n) === st) return i;
+    return -1;
+  }
   function generate(f, sel, title, variant, focus) {
     var prof = PROFILES[f.profile] || null;
     var sets = (prof && prof.sets) || ({ p: 2, i: 3, a: 4 }[f.level] || 3);
@@ -764,10 +775,20 @@ button.tile { cursor: pointer; min-height: 100px; justify-content: space-between
       picked.forEach(function (a, i) {
         if (used[i]) return; used[i] = true;
         var partner = -1, prefs = PREF[a.g] || [];
-        for (var p = 0; p < prefs.length && partner < 0; p++) {
-          for (var j = i + 1; j < picked.length; j++) { if (!used[j] && picked[j].g === prefs[p]) { partner = j; break; } }
+        // Stesso attrezzo = niente giri in palestra: preferisco chi ha un'alternativa con l'attrezzo del primo esercizio.
+        var sA = stationOf(a.slot.opts[0].n), best = -1, bestScore = 1e9;
+        for (var j = i + 1; j < picked.length; j++) {
+          if (used[j] || picked[j].g === a.g) continue;
+          var pr = prefs.indexOf(picked[j].g), hit = findStation(picked[j].slot.opts, sA, f.eq);
+          var score = (pr < 0 ? 50 : pr) + (hit < 0 ? 100 : 0);
+          if (sA === 'db' && hit >= 0 && (picked[j].g === 'bicipiti' || picked[j].g === 'tricipiti') && pr >= 0) score -= 20;
+          if (score < bestScore) { bestScore = score; best = j; }
         }
-        if (partner < 0) { for (var j2 = i + 1; j2 < picked.length; j2++) { if (!used[j2] && picked[j2].g !== a.g) { partner = j2; break; } } }
+        partner = best;
+        if (partner >= 0) {
+          var hi = findStation(picked[partner].slot.opts, sA, f.eq);
+          if (hi > 0) { var so = picked[partner].slot, no = so.opts.slice(); no.unshift(no.splice(hi, 1)[0]); picked[partner] = { g: picked[partner].g, slot: { big: so.big, opts: no } }; }
+        }
         if (partner >= 0) { used[partner] = true; blocksRaw.push([a, picked[partner]]); } else blocksRaw.push([a]);
       });
     } else {
